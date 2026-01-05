@@ -26,6 +26,7 @@ wheels/
 
 # Config files (contains sensitive data)
 config.json
+styles.json
 
 # IDE
 .vscode/

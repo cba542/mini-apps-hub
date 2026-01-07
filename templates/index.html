@@ -115,6 +115,39 @@
         font-size: 12px;
         margin-left: 6px;
       }
+
+      .result-container {
+        position: relative;
+      }
+
+      .copy-btn {
+        position: absolute;
+        top: 0;
+        right: 0;
+        background: #f5f5f5;
+        border: 1px solid #d6d6d6;
+        color: #666;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .copy-btn:hover {
+        background: #e5e5e5;
+        border-color: #999;
+      }
+
+      .copy-btn:active {
+        background: #d5d5d5;
+      }
+
+      .copy-btn.copied {
+        background: #4caf50;
+        color: white;
+        border-color: #4caf50;
+      }
     </style>
   </head>
   <body>
@@ -154,7 +187,10 @@
         {% endif %}
 
         {% if result %}
-          <div class="result">{{ result }}</div>
+          <div class="result-container">
+            <button class="copy-btn" onclick="copyResult()">复制</button>
+            <div class="result" id="result-text">{{ result }}</div>
+          </div>
         {% elif not error %}
           <p class="hint">提交后这里会显示生成的评论。</p>
         {% endif %}
@@ -164,5 +200,28 @@
         {% endif %}
       </section>
     </main>
+
+    <script>
+      function copyResult() {
+        const resultText = document.getElementById('result-text').innerText;
+        const copyBtn = document.querySelector('.copy-btn');
+        
+        navigator.clipboard.writeText(resultText).then(() => {
+          copyBtn.textContent = '已复制';
+          copyBtn.classList.add('copied');
+          
+          setTimeout(() => {
+            copyBtn.textContent = '复制';
+            copyBtn.classList.remove('copied');
+          }, 2000);
+        }).catch(err => {
+          copyBtn.textContent = '复制失败';
+          setTimeout(() => {
+            copyBtn.textContent = '复制';
+          }, 2000);
+          console.error('复制失败:', err);
+        });
+      }
+    </script>
   </body>
 </html>

@@ -7,9 +7,17 @@ from dataclasses import dataclass
 from typing import List
 
 import requests
-from flask import Flask, render_template, request
+from flask import Flask, redirect, render_template, request, url_for
 
 app = Flask(__name__)
+
+APP_PATH = "/dianping-review"
+
+
+def get_links() -> list[dict]:
+    return [
+        {"name": "Dianping Review Generator", "path": APP_PATH},
+    ]
 
 
 # ----------------------------
@@ -118,7 +126,13 @@ def call_chat_api(cfg: AIConfig, messages: list[dict]) -> str:
     return resp.json()["choices"][0]["message"]["content"].strip()
 
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
+def root():
+    return render_template("home.html", links=get_links())
+
+
+@app.route(APP_PATH, methods=["GET", "POST"])
+@app.route(f"{APP_PATH}/", methods=["GET", "POST"])
 def index():
     error = CONFIG_ERROR
     result = ""

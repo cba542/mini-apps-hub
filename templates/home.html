@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>工具首页</title>
+    <style>
+      :root {
+        --bg: #f2f0ea;
+        --card: #ffffff;
+        --ink: #2b2b2b;
+        --muted: #6d6d6d;
+        --accent: #cc4a3d;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
+        background: radial-gradient(circle at 10% 10%, #fff7e6, var(--bg));
+        color: var(--ink);
+      }
+
+      header {
+        padding: 28px 20px 10px;
+        text-align: center;
+      }
+
+      header h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+        letter-spacing: 1px;
+      }
+
+      header p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .wrap {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 18px 20px 36px;
+      }
+
+      .card {
+        background: var(--card);
+        border-radius: 16px;
+        padding: 18px;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 12px;
+      }
+
+      a {
+        display: block;
+        text-decoration: none;
+        color: var(--ink);
+        border: 1px solid #e2e2e2;
+        border-radius: 12px;
+        padding: 14px 16px;
+        transition: all 0.2s ease;
+      }
+
+      a:hover {
+        border-color: var(--accent);
+        box-shadow: 0 8px 18px rgba(204, 74, 61, 0.15);
+      }
+
+      .tag {
+        display: inline-block;
+        margin-left: 8px;
+        padding: 2px 8px;
+        background: #fbe7e4;
+        color: #8f2c23;
+        border-radius: 999px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>工具首页</h1>
+      <p>选择一个功能开始使用</p>
+    </header>
+
+    <main class="wrap">
+      <section class="card">
+        <ul>
+          {% for link in links %}
+            <li>
+              <a href="{{ link.path }}">
+                {{ link.name }}
+                <span class="tag">{{ link.path }}</span>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

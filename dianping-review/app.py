@@ -16,8 +16,14 @@ bp = Blueprint("dianping_review", __name__, template_folder="templates")
 # ----------------------------
 # Config
 # ----------------------------
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
-STYLES_PATH = os.path.join(os.path.dirname(__file__), "styles.json")
+CONFIG_PATH = os.environ.get(
+    "CONFIG_PATH",
+    os.path.join(os.path.dirname(__file__), "config.json"),
+)
+STYLES_PATH = os.environ.get(
+    "STYLES_PATH",
+    os.path.join(os.path.dirname(__file__), "styles.json"),
+)
 
 
 def load_config(path: str) -> dict:

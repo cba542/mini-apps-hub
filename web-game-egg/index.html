@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>鹅类下蛋射击</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="game">
+      <header class="hud">
+        <div class="title">
+          <h1>鹅类下蛋射击</h1>
+          <p>长按拖动瞄准，松开发射</p>
+        </div>
+        <div class="controls">
+          <button id="start-btn" type="button">开始游戏</button>
+          <button id="restart-btn" type="button" class="hidden">重新开始</button>
+          <button id="exit-btn" type="button" class="hidden">退出游戏</button>
+        </div>
+        <div class="charge-panel" id="charge-panel"></div>
+        <div class="tuning">
+          <label class="tuning-item">
+            <span>怪物速度</span>
+            <input id="monster-speed" type="range" min="0.5" max="4" step="0.1" value="2" />
+            <strong id="monster-speed-value">2.0</strong>
+          </label>
+          <label class="tuning-item">
+            <span>集气速度</span>
+            <input id="charge-speed" type="range" min="0.5" max="3" step="0.1" value="1.8" />
+            <strong id="charge-speed-value">x1.8</strong>
+          </label>
+          <label class="tuning-item">
+            <span>弹跳次数</span>
+            <input id="bounce-count" type="range" min="1" max="10" step="1" value="5" />
+            <strong id="bounce-count-value">5</strong>
+          </label>
+          <label class="tuning-item">
+            <span>碰撞伤害</span>
+            <input id="damage" type="range" min="5" max="50" step="5" value="10" />
+            <strong id="damage-value">10</strong>
+          </label>
+          <label class="tuning-item">
+            <span>怪物血量</span>
+            <input id="hp-range" type="range" min="30" max="120" step="10" value="70" />
+            <strong id="hp-range-value">40-70</strong>
+          </label>
+          <label class="tuning-item">
+            <span>重力</span>
+            <input id="gravity" type="range" min="0.1" max="0.6" step="0.01" value="0.22" />
+            <strong id="gravity-value">0.22</strong>
+          </label>
+          <label class="tuning-item">
+            <span>反射角</span>
+            <input id="bounce-angle" type="range" min="0.4" max="1" step="0.01" value="1" />
+            <strong id="bounce-angle-value">1.00</strong>
+          </label>
+
+          <label class="tuning-item">
+            <span>蛋大小</span>
+            <input id="egg-size" type="range" min="4" max="14" step="1" value="8" />
+            <strong id="egg-size-value">8</strong>
+          </label>
+        </div>
+      </header>
+
+      <section class="board-wrap">
+        <canvas id="game-canvas" width="390" height="844"></canvas>
+        <div id="overlay" class="overlay hidden">
+          <div class="overlay-card">
+            <h2 id="overlay-title">准备开始</h2>
+            <p id="overlay-text">点击开始游戏</p>
+          </div>
+        </div>
+      </section>
+
+      <footer class="status">
+        <div>当前波次: <strong id="wave">1</strong> / 3</div>
+        <div>剩余怪物: <strong id="remaining">0</strong></div>
+        <div>模式: <strong id="mode">手动</strong></div>
+      </footer>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -57,6 +57,9 @@ except Exception as exc:  # noqa: BLE001
 
 
 def get_config_value(key: str, default: str) -> str:
+    env_value = os.environ.get(key)
+    if env_value is not None:
+        return env_value
     value = CONFIG.get(key, default)
     return value if isinstance(value, str) else default
 

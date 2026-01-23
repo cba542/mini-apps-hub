@@ -1,6 +1,32 @@
 "use strict";
 
 const STORAGE_KEY = "meal-time-planner-state";
+const MODE_CALENDAR = "calendar";
+const MODE_TIME = "time";
+const PERSON_COLORS = [
+  "#e45858",
+  "#2f6bd1",
+  "#d89b20",
+  "#2a9d67",
+  "#8a63d2",
+  "#1b9aaa",
+  "#d94f9b",
+  "#6b7c12",
+];
+const MONTH_COLORS = [
+  "#d96a5b",
+  "#d4a036",
+  "#4e9f7a",
+  "#4b7fd1",
+  "#8a63d2",
+  "#d9822b",
+  "#2f9fb1",
+  "#c15fa2",
+  "#6d8b2d",
+  "#b8704c",
+  "#4f6aa3",
+  "#9a6f2e",
+];
 
 const today = new Date();
 const defaultEnd = new Date(today);
@@ -22,6 +48,7 @@ const state = {
   activePersonId: 1,
   slots: [],
   days: [],
+  mode: MODE_CALENDAR,
   config: { ...defaultConfig },
   drag: {
     active: false,
@@ -54,6 +81,8 @@ const elements = {
   endTime: document.getElementById("end-time"),
   stepMinutes: document.getElementById("step-minutes"),
   applyConfig: document.getElementById("apply-config"),
+  modeCalendar: document.getElementById("mode-calendar"),
+  modeTime: document.getElementById("mode-time"),
   rangeText: document.getElementById("range-text"),
   stepText: document.getElementById("step-text"),
   clearStorage: document.getElementById("clear-storage"),
@@ -146,6 +175,18 @@ const generateSlots = () => {
     return { slots: [], days: [] };
   }
   const days = buildDays(startDate, endDate);
+  if (state.mode === MODE_CALENDAR) {
+    const slots = days.map((date, dayIndex) => {
+      const dateKey = date.toISOString().slice(0, 10);
+      return {
+        id: dateKey,
+        dayIndex,
+        date,
+        dateKey,
+      };
+    });
+    return { slots, days };
+  }
   const slots = [];
   const startMinutes = parseTimeMinutes(state.config.startTime);
   const endMinutes = parseTimeMinutes(state.config.endTime);
@@ -173,6 +214,51 @@ const generateSlots = () => {
 
 const buildScheduleGrid = () => {
   elements.schedule.innerHTML = "";
+  if (state.mode === MODE_CALENDAR) {
+    elements.schedule.classList.add("schedule--calendar");
+    elements.schedule.style.gridTemplateColumns = "repeat(7, minmax(96px, 1fr))";
+    elements.schedule.style.gridTemplateRows = "48px";
+    elements.schedule.style.gridAutoRows = "96px";
+
+    const startWeekday = state.days[0]?.getDay() ?? 0;
+    labels.weekdays.forEach((label) => {
+      const cell = document.createElement("div");
+      cell.className = "day-cell day-cell--week";
+      cell.textContent = label;
+      elements.schedule.appendChild(cell);
+    });
+
+    for (let i = 0; i < startWeekday; i += 1) {
+      const filler = document.createElement("div");
+      filler.className = "day-cell day-cell--blank";
+      elements.schedule.appendChild(filler);
+    }
+
+    state.slots.forEach((slot, index) => {
+      const cell = document.createElement("div");
+      const showMonthTag = index === 0 || slot.date.getDate() === 1;
+      const monthIndex = slot.date.getMonth();
+      const monthColor = MONTH_COLORS[monthIndex % MONTH_COLORS.length];
+      const monthTag = showMonthTag
+        ? `<span class="month-tag" style="--month-color: ${monthColor}">${monthIndex + 1}月</span>`
+        : "";
+      cell.className = "slot slot--calendar";
+      cell.dataset.slotId = slot.id;
+      cell.dataset.dayIndex = String(slot.dayIndex);
+      cell.dataset.level = "0";
+      cell.innerHTML = `
+        <span class="calendar-day">${slot.date.getDate()}</span>
+        ${monthTag}
+        <div class="calendar-dots"></div>
+      `;
+      cell.addEventListener("pointerdown", handlePointerDown);
+      elements.schedule.appendChild(cell);
+    });
+    return;
+  }
+
+  elements.schedule.classList.remove("schedule--calendar");
+  elements.schedule.style.gridAutoRows = "";
   const daysCount = state.days.length;
   const startMinutes = parseTimeMinutes(state.config.startTime);
   const endMinutes = parseTimeMinutes(state.config.endTime);
@@ -217,19 +303,29 @@ const buildScheduleGrid = () => {
 
 const renderPeople = () => {
   elements.peopleList.innerHTML = "";
-  state.people.forEach((person) => {
+  state.people.forEach((person, index) => {
     const item = document.createElement("div");
     item.className = "person";
     if (person.id === state.activePersonId) {
       item.classList.add("active");
     }
     item.innerHTML = `
-      <span>${person.name}</span>
-      <button type="button" data-id="${person.id}">×</button>
+      <span class="person-name">
+        <i class="person-dot" style="--dot-color: ${PERSON_COLORS[index % PERSON_COLORS.length]}"></i>
+        ${person.name}
+      </span>
+      <div class="person-actions">
+        <button type="button" class="person-edit" data-id="${person.id}">改名</button>
+        <button type="button" class="person-remove" data-id="${person.id}">×</button>
+      </div>
     `;
     item.addEventListener("click", (event) => {
-      if (event.target.matches("button")) {
+      if (event.target.matches(".person-remove")) {
         removePerson(person.id);
+        return;
+      }
+      if (event.target.matches(".person-edit")) {
+        renamePerson(person.id);
         return;
       }
       setActivePerson(person.id);
@@ -286,6 +382,28 @@ const removePerson = (id) => {
   updateJsonArea();
 };
 
+const renamePerson = (id) => {
+  const person = state.people.find((entry) => entry.id === id);
+  if (!person) {
+    return;
+  }
+  const nextName = window.prompt("请输入新的名字", person.name);
+  if (!nextName) {
+    return;
+  }
+  const trimmed = nextName.trim();
+  if (!trimmed) {
+    updateStatus("名字不能为空。");
+    return;
+  }
+  person.name = trimmed;
+  renderPeople();
+  updateSummary();
+  saveState();
+  updateJsonArea();
+  updateStatus("名字已更新。");
+};
+
 
 
 const setSlotSelection = (slotId, shouldSelect) => {
@@ -330,6 +448,10 @@ const clearActive = () => {
 };
 
 const clearAll = () => {
+  const ok = window.confirm("确认清空所有人的选择吗？");
+  if (!ok) {
+    return;
+  }
   state.people.forEach((person) => person.availability.clear());
   updateGridVisuals();
   updateSummary();
@@ -363,6 +485,22 @@ const updateGridVisuals = () => {
       cell.classList.add("is-selected");
     } else {
       cell.classList.remove("is-selected");
+    }
+
+    if (state.mode === MODE_CALENDAR) {
+      const dotWrap = cell.querySelector(".calendar-dots");
+      if (!dotWrap) {
+        return;
+      }
+      dotWrap.innerHTML = "";
+      state.people.forEach((person, index) => {
+        if (person.availability.has(slotId)) {
+          const dot = document.createElement("span");
+          dot.className = "person-dot";
+          dot.style.setProperty("--dot-color", PERSON_COLORS[index % PERSON_COLORS.length]);
+          dotWrap.appendChild(dot);
+        }
+      });
     }
   });
 };
@@ -398,6 +536,14 @@ const updateSummary = () => {
     item.className = "common-group";
     const week = date ? labels.weekdays[date.getDay()] : "";
     const dateText = date ? `${week} ${formatDate(date)}` : dateKey;
+    if (state.mode === MODE_CALENDAR) {
+      item.innerHTML = `
+        <div class="common-date">${dateText}</div>
+        <div class="common-times">整天可行</div>
+      `;
+      elements.commonList.appendChild(item);
+      return;
+    }
     const times = slots
       .map((slot) => `${String(slot.hour).padStart(2, "0")}:${String(slot.minute).padStart(2, "0")}`)
       .join(" ");
@@ -418,12 +564,18 @@ const updateInfoCard = () => {
   }
   const startText = `${labels.weekdays[startDate.getDay()]} ${formatDate(startDate)}`;
   const endText = `${labels.weekdays[endDate.getDay()]} ${formatDate(endDate)}`;
+  if (state.mode === MODE_CALENDAR) {
+    elements.rangeText.textContent = `${startText} 至 ${endText}`;
+    elements.stepText.textContent = "整天";
+    return;
+  }
   elements.rangeText.textContent = `${startText} 至 ${endText} / ${state.config.startTime}-${state.config.endTime}`;
   elements.stepText.textContent = `${state.config.stepMinutes} 分钟`;
 };
 
 const serializeState = () => ({
   config: state.config,
+  mode: state.mode,
   activePersonId: state.activePersonId,
   people: state.people.map((person) => ({
     id: person.id,
@@ -438,6 +590,9 @@ const applyStateData = (data) => {
   }
   if (data.config) {
     state.config = sanitizeConfig(data.config);
+  }
+  if (data.mode === MODE_TIME || data.mode === MODE_CALENDAR) {
+    state.mode = data.mode;
   }
   if (Array.isArray(data.people) && data.people.length) {
     state.people = data.people.map((person) => ({
@@ -577,9 +732,11 @@ const applyConfigFromInputs = (options = { notify: true }) => {
     updateStatus("日期范围最多 62 天。");
     return;
   }
-  if (startMinutes === null || endMinutes === null || startMinutes >= endMinutes) {
-    updateStatus("请确认每日开始/结束时间。");
-    return;
+  if (state.mode === MODE_TIME) {
+    if (startMinutes === null || endMinutes === null || startMinutes >= endMinutes) {
+      updateStatus("请确认每日开始/结束时间。");
+      return;
+    }
   }
 
   state.config = {
@@ -610,8 +767,8 @@ const rebuildSchedule = () => {
   updateGridVisuals();
   updateSummary();
   updateInfoCard();
-  saveState();
   updateJsonArea();
+  updateModeUI();
 };
 
 const syncInputs = () => {
@@ -620,6 +777,40 @@ const syncInputs = () => {
   elements.startTime.value = state.config.startTime;
   elements.endTime.value = state.config.endTime;
   elements.stepMinutes.value = String(state.config.stepMinutes);
+};
+
+const updateModeUI = () => {
+  const timeFields = document.querySelectorAll(".time-field");
+  timeFields.forEach((field) => {
+    field.classList.toggle("is-hidden", state.mode === MODE_CALENDAR);
+  });
+  if (elements.modeCalendar) {
+    elements.modeCalendar.classList.toggle("ghost", state.mode !== MODE_CALENDAR);
+  }
+  if (elements.modeTime) {
+    elements.modeTime.classList.toggle("ghost", state.mode !== MODE_TIME);
+  }
+  updateInfoCard();
+};
+
+const setMode = (mode) => {
+  if (mode !== MODE_CALENDAR && mode !== MODE_TIME) {
+    return;
+  }
+  if (state.mode === mode) {
+    return;
+  }
+  state.mode = mode;
+  state.drag.dayIndex = null;
+  state.drag.mode = null;
+  state.drag.lastSlotId = null;
+  state.drag.active = false;
+  updateModeUI();
+  rebuildSchedule();
+  updateSummary();
+  saveState();
+  updateJsonArea();
+  updateStatus(mode === MODE_CALENDAR ? "已切换到月历模式。" : "已切换到时间段模式。");
 };
 
 const handlePointerDown = (event) => {
@@ -723,12 +914,14 @@ const applyDrag = (slotId, dayIndex) => {
 const clearStorage = () => {
   localStorage.removeItem(STORAGE_KEY);
   state.config = { ...defaultConfig };
+  state.mode = MODE_CALENDAR;
   state.people = [
     { id: 1, name: "小周", availability: new Set() },
     { id: 2, name: "阿敏", availability: new Set() },
   ];
   state.activePersonId = 1;
   syncInputs();
+  updateModeUI();
   rebuildSchedule();
   renderPeople();
   updateJsonArea();
@@ -738,16 +931,25 @@ const clearStorage = () => {
 const init = () => {
   restoreState();
   state.config = sanitizeConfig(state.config);
+  if (!state.mode) {
+    state.mode = MODE_CALENDAR;
+  }
   syncInputs();
+  updateModeUI();
 
   const inputsMissing =
     !elements.startDate.value ||
     !elements.endDate.value ||
-    !elements.startTime.value ||
-    !elements.endTime.value;
+    (state.mode === MODE_TIME && (!elements.startTime.value || !elements.endTime.value));
   if (inputsMissing) {
     state.config = { ...defaultConfig };
     syncInputs();
+  }
+
+  if (state.mode === MODE_CALENDAR) {
+    state.config.startTime = defaultConfig.startTime;
+    state.config.endTime = defaultConfig.endTime;
+    state.config.stepMinutes = defaultConfig.stepMinutes;
   }
 
   let { slots, days } = generateSlots();
@@ -766,6 +968,7 @@ const init = () => {
   updateSummary();
   updateInfoCard();
   updateJsonArea();
+  updateModeUI();
   updateStatus("准备就绪，选择一个人开始标记。");
 };
 
@@ -792,6 +995,12 @@ if (elements.startDate) {
   elements.startTime.addEventListener("change", () => applyConfigFromInputs({ notify: false }));
   elements.endTime.addEventListener("change", () => applyConfigFromInputs({ notify: false }));
   elements.stepMinutes.addEventListener("change", () => applyConfigFromInputs({ notify: false }));
+}
+if (elements.modeCalendar) {
+  elements.modeCalendar.addEventListener("click", () => setMode(MODE_CALENDAR));
+}
+if (elements.modeTime) {
+  elements.modeTime.addEventListener("click", () => setMode(MODE_TIME));
 }
 if (elements.clearStorage) {
   elements.clearStorage.addEventListener("click", clearStorage);

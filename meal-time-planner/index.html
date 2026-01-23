@@ -35,6 +35,10 @@
 
           <div class="config">
             <h3>时间设置</h3>
+            <div class="mode-toggle">
+              <button id="mode-calendar" type="button">月历模式</button>
+              <button id="mode-time" type="button" class="ghost">时间段</button>
+            </div>
             <div class="config-grid">
               <label>
                 起始日期
@@ -44,15 +48,15 @@
                 结束日期
                 <input id="end-date" type="date" />
               </label>
-              <label>
+              <label class="time-field">
                 每日开始
                 <input id="start-time" type="time" />
               </label>
-              <label>
+              <label class="time-field">
                 每日结束
                 <input id="end-time" type="time" />
               </label>
-              <label>
+              <label class="time-field">
                 粒度
                 <select id="step-minutes">
                   <option value="15">15 分钟</option>
@@ -78,8 +82,8 @@
           <div class="usage">
             <h3>使用方式</h3>
             <ol>
-              <li>选择一个人并点击时间格子。</li>
-              <li>可按住拖拽同一天的时间段。</li>
+              <li>选择一个人并点击格子标记有空。</li>
+              <li>可按住拖拽连续日期或时间段。</li>
               <li>其他人轮流标记各自有空的时间。</li>
               <li>右侧会高亮大家都能的时段。</li>
             </ol>
@@ -132,7 +136,7 @@
       <section class="panel panel--summary">
         <div class="panel-title">
           <h2>共同空档</h2>
-          <p class="muted">所有人都勾选的时间段会显示在这里。</p>
+          <p class="muted">所有人都勾选的日期或时间会显示在这里。</p>
         </div>
         <ul id="common-list" class="common-list"></ul>
       </section>

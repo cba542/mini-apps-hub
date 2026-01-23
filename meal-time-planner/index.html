@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>聚餐时间协调</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="hero">
+        <p class="eyebrow">Mini Apps Hub</p>
+        <h1>聚餐时间协调</h1>
+        <p>选择每个人有空的时间，直观看到共同空档</p>
+      </header>
+
+      <section class="layout">
+        <aside class="panel panel--controls">
+          <div class="panel-title">
+            <h2>参与者</h2>
+            <p id="current-person" class="muted">当前：-</p>
+          </div>
+
+          <div class="people" id="people-list"></div>
+
+          <div class="add-person">
+            <input id="person-name" type="text" placeholder="输入名字" />
+            <button id="add-person" type="button">添加</button>
+          </div>
+
+          <div class="control-actions">
+            <button id="clear-active" type="button">清空当前</button>
+            <button id="clear-all" type="button" class="ghost">全部清空</button>
+          </div>
+
+          <div class="config">
+            <h3>时间设置</h3>
+            <div class="config-grid">
+              <label>
+                起始日期
+                <input id="start-date" type="date" />
+              </label>
+              <label>
+                结束日期
+                <input id="end-date" type="date" />
+              </label>
+              <label>
+                每日开始
+                <input id="start-time" type="time" />
+              </label>
+              <label>
+                每日结束
+                <input id="end-time" type="time" />
+              </label>
+              <label>
+                粒度
+                <select id="step-minutes">
+                  <option value="15">15 分钟</option>
+                  <option value="30">30 分钟</option>
+                  <option value="60">60 分钟</option>
+                </select>
+              </label>
+            </div>
+            <button id="apply-config" type="button">更新网格</button>
+          </div>
+
+          <div class="info-card">
+            <div>
+              <strong>时间范围</strong>
+              <span id="range-text">-</span>
+            </div>
+            <div>
+              <strong>粒度</strong>
+              <span id="step-text">-</span>
+            </div>
+          </div>
+
+          <div class="usage">
+            <h3>使用方式</h3>
+            <ol>
+              <li>选择一个人并点击时间格子。</li>
+              <li>可按住拖拽同一天的时间段。</li>
+              <li>其他人轮流标记各自有空的时间。</li>
+              <li>右侧会高亮大家都能的时段。</li>
+            </ol>
+          </div>
+
+          <div class="export">
+            <h3>导出 / 导入</h3>
+            <textarea id="json-area" rows="6" placeholder="点击复制后会生成 JSON，可在这里粘贴导入"></textarea>
+            <div class="export-actions">
+              <button id="copy-json" type="button">复制 JSON</button>
+              <button id="download-json" type="button" class="ghost">下载 JSON</button>
+              <button id="import-json" type="button" class="ghost">导入 JSON</button>
+              <button id="import-file" type="button" class="ghost">导入文件</button>
+            </div>
+            <input id="json-file" type="file" accept="application/json" hidden />
+            <p class="hint">导入会覆盖现有内容。</p>
+          </div>
+
+          <div class="control-actions">
+            <button id="clear-storage" type="button" class="ghost">清除数据</button>
+          </div>
+
+          <p class="status" id="status-text"></p>
+        </aside>
+
+        <section class="panel panel--grid">
+          <div class="panel-title">
+            <h2>时间表</h2>
+            <p class="muted">点击格子标记有空，颜色越深代表越多人可行。</p>
+          </div>
+
+          <div class="legend">
+            <span><i class="dot dot--empty"></i>无人选择</span>
+            <span><i class="dot dot--some"></i>部分有空</span>
+            <span><i class="dot dot--all"></i>共同空档</span>
+            <span><i class="dot dot--you"></i>当前选择</span>
+          </div>
+
+          <div class="schedule-wrap">
+            <div id="schedule" class="schedule"></div>
+          </div>
+
+          <div class="summary-bar">
+            <span id="summary-stats">已选人数：-</span>
+            <span id="summary-hint" class="muted">共同空档会自动汇总在下方</span>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel panel--summary">
+        <div class="panel-title">
+          <h2>共同空档</h2>
+          <p class="muted">所有人都勾选的时间段会显示在这里。</p>
+        </div>
+        <ul id="common-list" class="common-list"></ul>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

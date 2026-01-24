@@ -102,6 +102,12 @@ const elements = {
   importJson: document.getElementById("import-json"),
   importFile: document.getElementById("import-file"),
   jsonFile: document.getElementById("json-file"),
+  createRoom: document.getElementById("create-room"),
+  joinRoom: document.getElementById("join-room"),
+  roomIdInput: document.getElementById("room-id"),
+  copyRoom: document.getElementById("copy-room"),
+  saveRoom: document.getElementById("save-room"),
+  roomStatus: document.getElementById("room-status"),
 };
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
@@ -176,6 +182,34 @@ const formatTime = (minutes) => {
 };
 
 const isMobileView = () => window.matchMedia("(max-width: 600px)").matches;
+
+const SYNC_INTERVAL_MS = 15000;
+
+const roomState = {
+  id: null,
+  lastSyncedAt: 0,
+  dirty: false,
+  saveTimer: null,
+  pollTimer: null,
+  statusKey: null,
+  statusFallback: "",
+};
+
+const getDefaultStatePayload = () => ({
+  people: [
+    { id: 1, name: "小周", availability: [] },
+    { id: 2, name: "阿敏", availability: [] },
+  ],
+  activePersonId: 1,
+  slots: [],
+  days: [],
+  mode: MODE_CALENDAR,
+  showOthers: false,
+  lang: "zh-CN",
+  weekOffset: 0,
+  monthOffset: 0,
+  config: { ...defaultConfig },
+});
 
 const getMonthContext = () => {
   const startDate = parseDate(state.config.startDate);
@@ -445,6 +479,243 @@ const updateStatusKey = (key) => {
   updateStatus(message);
 };
 
+const updateRoomStatus = (key, fallback) => {
+  roomState.statusKey = key;
+  roomState.statusFallback = fallback || "";
+  if (!elements.roomStatus) {
+    return;
+  }
+  const dict = I18N[state.lang] || I18N["zh-CN"];
+  elements.roomStatus.textContent = dict[key] || fallback || "";
+};
+
+const setRoomId = (roomId) => {
+  roomState.id = roomId;
+  if (elements.roomIdInput) {
+    elements.roomIdInput.value = roomId || "";
+  }
+  if (roomId) {
+    updateRoomStatus("roomReady", `房间：${roomId}`);
+  } else {
+    updateRoomStatus("roomIdle", "未加入房间");
+  }
+};
+
+const buildRoomUrl = (roomId) => {
+  const url = new URL(window.location.href);
+  if (roomId) {
+    url.searchParams.set("room", roomId);
+  } else {
+    url.searchParams.delete("room");
+  }
+  return url.toString();
+};
+
+const scheduleSave = () => {
+  if (!roomState.id) {
+    return;
+  }
+  roomState.dirty = true;
+  if (roomState.saveTimer) {
+    clearTimeout(roomState.saveTimer);
+  }
+  roomState.saveTimer = setTimeout(() => {
+    saveRoom();
+  }, 1000);
+};
+
+const refreshFromDefault = () => {
+  const payload = getDefaultStatePayload();
+  applyStateData(payload);
+  syncInputs();
+  rebuildSchedule();
+  renderPeople();
+  updateSummary();
+  updateInfoCard();
+  updateJsonArea();
+  updateModeUI();
+  applyLanguage();
+};
+
+const markSynced = (updatedAt) => {
+  roomState.dirty = false;
+  roomState.lastSyncedAt = updatedAt;
+  updateRoomStatus("roomSynced", "已同步");
+};
+
+const saveRoom = async (options = { notify: false }) => {
+  if (!roomState.id) {
+    return;
+  }
+  const payload = {
+    data: JSON.stringify(serializeState()),
+  };
+  try {
+    const response = await fetch(`/api/rooms/${roomState.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      updateRoomStatus("roomSaveFail", "保存失败");
+      return;
+    }
+    const result = await response.json();
+    markSynced(result.updatedAt || 0);
+    if (options.notify) {
+      updateRoomStatus("roomSaved", "已保存");
+    }
+  } catch (error) {
+    updateRoomStatus("roomSaveFail", "保存失败");
+  }
+};
+
+const fetchRoom = async (roomId, options = { silent: false }) => {
+  try {
+    const response = await fetch(`/api/rooms/${roomId}`);
+    if (!response.ok) {
+      if (!options.silent) {
+        updateRoomStatus("roomNotFound", "房间不存在");
+      }
+      return null;
+    }
+    return await response.json();
+  } catch (error) {
+    if (!options.silent) {
+      updateRoomStatus("roomLoadFail", "加载失败");
+    }
+    return null;
+  }
+};
+
+const applyRoomData = (payload) => {
+  if (!payload || !payload.data) {
+    return false;
+  }
+  try {
+    const data = JSON.parse(payload.data);
+    const ok = applyStateData(data);
+    if (!ok) {
+      return false;
+    }
+    syncInputs();
+    rebuildSchedule();
+    renderPeople();
+    updateSummary();
+    updateInfoCard();
+    updateJsonArea();
+    applyLanguage();
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
+const pollRoom = async () => {
+  if (!roomState.id) {
+    return;
+  }
+  const payload = await fetchRoom(roomState.id, { silent: true });
+  if (!payload || typeof payload.updatedAt !== "number") {
+    return;
+  }
+  if (payload.updatedAt > roomState.lastSyncedAt && !roomState.dirty) {
+    const applied = applyRoomData(payload);
+    if (applied) {
+      markSynced(payload.updatedAt);
+    }
+  }
+};
+
+const startPolling = () => {
+  if (roomState.pollTimer) {
+    clearInterval(roomState.pollTimer);
+  }
+  roomState.pollTimer = setInterval(pollRoom, SYNC_INTERVAL_MS);
+};
+
+const createRoomFlow = async () => {
+  refreshFromDefault();
+  const payloadData = JSON.stringify(getDefaultStatePayload());
+  try {
+    const response = await fetch("/api/rooms", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: payloadData }),
+    });
+    if (!response.ok) {
+      updateRoomStatus("roomCreateFail", "创建失败");
+      return;
+    }
+    const payload = await response.json();
+    setRoomId(payload.roomId);
+    markSynced(payload.updatedAt || 0);
+    const url = buildRoomUrl(payload.roomId);
+    window.history.replaceState({}, "", url);
+    startPolling();
+  } catch (error) {
+    updateRoomStatus("roomCreateFail", "创建失败");
+  }
+};
+
+const joinRoomFlow = async () => {
+  const roomId = elements.roomIdInput?.value.trim().toUpperCase();
+  if (!roomId) {
+    updateRoomStatus("roomIdRequired", "请输入房间号");
+    return;
+  }
+  const payload = await fetchRoom(roomId);
+  if (!payload) {
+    return;
+  }
+  setRoomId(roomId);
+  const applied = applyRoomData(payload);
+  if (!applied) {
+    updateRoomStatus("roomLoadFail", "加载失败");
+    return;
+  }
+  markSynced(payload.updatedAt || 0);
+  const url = buildRoomUrl(roomId);
+  window.history.replaceState({}, "", url);
+  startPolling();
+};
+
+const copyRoomLink = async () => {
+  if (!roomState.id) {
+    updateRoomStatus("roomNoLink", "没有房间");
+    return;
+  }
+  const url = buildRoomUrl(roomState.id);
+  try {
+    await navigator.clipboard.writeText(url);
+    updateRoomStatus("roomLinkCopied", "已复制链接");
+  } catch (error) {
+    updateRoomStatus("roomCopyFail", "复制失败");
+  }
+};
+
+const initRoomFromUrl = async () => {
+  const params = new URLSearchParams(window.location.search);
+  const roomId = params.get("room");
+  if (!roomId) {
+    setRoomId(null);
+    return;
+  }
+  const normalized = roomId.trim().toUpperCase();
+  const payload = await fetchRoom(normalized);
+  if (!payload) {
+    setRoomId(null);
+    return;
+  }
+  setRoomId(normalized);
+  const applied = applyRoomData(payload);
+  if (applied) {
+    markSynced(payload.updatedAt || 0);
+  }
+  startPolling();
+};
+
+
 const setActivePerson = (id) => {
   state.activePersonId = id;
   renderPeople();
@@ -466,6 +737,7 @@ const addPerson = () => {
   updateJsonArea();
   updateStatusKey("addPerson");
   applyLanguage();
+  scheduleSave();
 };
 
 const removePerson = (id) => {
@@ -501,6 +773,7 @@ const renamePerson = (id, nextName) => {
   updateJsonArea();
   updateStatusKey("renameSuccess");
   applyLanguage();
+  scheduleSave();
   return true;
 };
 
@@ -583,6 +856,7 @@ const clearActive = () => {
   updateJsonArea();
   updateStatusKey("clearActiveDone");
   applyLanguage();
+  scheduleSave();
 };
 
 const clearAll = () => {
@@ -598,6 +872,7 @@ const clearAll = () => {
   updateJsonArea();
   updateStatusKey("clearAllDone");
   applyLanguage();
+  scheduleSave();
 };
 
 const updateGridVisuals = () => {
@@ -984,6 +1259,7 @@ const applyConfigFromInputs = (options = { notify: true }) => {
   rebuildSchedule();
   updateStatusKey("configUpdated");
   applyLanguage();
+  scheduleSave();
 };
 
 const rebuildSchedule = () => {
@@ -1052,6 +1328,7 @@ const setMode = (mode) => {
   saveState();
   updateJsonArea();
   updateStatusKey(mode === MODE_CALENDAR ? "switchCalendar" : "switchTime");
+  scheduleSave();
 };
 
 const toggleOthers = () => {
@@ -1097,6 +1374,7 @@ const changeMonth = (direction) => {
   updateSummary();
   updateModeUI();
   saveState();
+  scheduleSave();
 };
 
 const I18N = {
@@ -1123,6 +1401,23 @@ const I18N = {
     hideAll: "隐藏全部",
     prevMonth: "上一月",
     nextMonth: "下一月",
+    createRoom: "创建房间",
+    joinRoom: "加入房间",
+    copyRoom: "复制链接",
+    roomPlaceholder: "输入房间号",
+    roomIdle: "未加入房间",
+    roomReady: "房间：",
+    roomSynced: "已同步",
+    roomSaved: "已保存",
+    roomCreateFail: "创建失败",
+    roomLoadFail: "加载失败",
+    roomNotFound: "房间不存在",
+    roomSaveFail: "保存失败",
+    roomIdRequired: "请输入房间号",
+    roomLinkCopied: "链接已复制",
+    roomCopyFail: "复制失败",
+    roomNoLink: "没有房间",
+    saveRoom: "保存",
     range: "时间范围",
     stepLabel: "粒度",
     usage: "使用方式",
@@ -1198,6 +1493,23 @@ const I18N = {
     hideAll: "隱藏全部",
     prevMonth: "上一月",
     nextMonth: "下一月",
+    createRoom: "建立房間",
+    joinRoom: "加入房間",
+    copyRoom: "複製連結",
+    roomPlaceholder: "輸入房間號",
+    roomIdle: "未加入房間",
+    roomReady: "房間：",
+    roomSynced: "已同步",
+    roomSaved: "已儲存",
+    roomCreateFail: "建立失敗",
+    roomLoadFail: "載入失敗",
+    roomNotFound: "房間不存在",
+    roomSaveFail: "儲存失敗",
+    roomIdRequired: "請輸入房間號",
+    roomLinkCopied: "連結已複製",
+    roomCopyFail: "複製失敗",
+    roomNoLink: "沒有房間",
+    saveRoom: "保存",
     range: "時間範圍",
     stepLabel: "粒度",
     usage: "使用方式",
@@ -1271,6 +1583,12 @@ const applyLanguage = () => {
   }
   if (elements.toggleLang) {
     elements.toggleLang.checked = state.lang === "zh-TW";
+  }
+  if (roomState.statusKey) {
+    updateRoomStatus(roomState.statusKey, roomState.statusFallback);
+  }
+  if (elements.roomIdInput) {
+    elements.roomIdInput.placeholder = dict.roomPlaceholder || elements.roomIdInput.placeholder;
   }
 };
 
@@ -1377,6 +1695,7 @@ const applyDrag = (slotId, dayIndex) => {
   setSlotSelection(slotId, shouldSelect);
   updateGridVisuals();
   updateSummary();
+  scheduleSave();
 };
 
 const clearStorage = () => {
@@ -1420,6 +1739,7 @@ const init = () => {
   syncInputs();
   updateModeUI();
   applyLanguage();
+  updateRoomStatus(roomState.id ? "roomSynced" : "roomIdle", roomState.id ? "已同步" : "未加入房间");
 
   const inputsMissing =
     !elements.startDate.value ||
@@ -1460,6 +1780,7 @@ const init = () => {
   updateMonthRange(isMobileView() ? getMonthDays() : []);
   updateStatusKey("ready");
   applyLanguage();
+  initRoomFromUrl();
 };
 
 elements.addPerson.addEventListener("click", addPerson);
@@ -1489,7 +1810,7 @@ if (elements.startDate) {
 if (elements.modeCalendar) {
   elements.modeCalendar.addEventListener("click", () => setMode(MODE_CALENDAR));
 }
-if (elements.modeTime) {
+if (elements.modeTime && !elements.modeTime.disabled) {
   elements.modeTime.addEventListener("click", () => setMode(MODE_TIME));
 }
 if (elements.toggleDots) {
@@ -1509,6 +1830,28 @@ if (elements.monthPrev) {
 }
 if (elements.monthNext) {
   elements.monthNext.addEventListener("click", () => changeMonth(1));
+}
+if (elements.createRoom) {
+  elements.createRoom.addEventListener("click", createRoomFlow);
+}
+if (elements.joinRoom) {
+  elements.joinRoom.addEventListener("click", joinRoomFlow);
+}
+if (elements.copyRoom) {
+  elements.copyRoom.addEventListener("click", copyRoomLink);
+}
+if (elements.saveRoom) {
+  elements.saveRoom.addEventListener("click", async () => {
+    await saveRoom({ notify: true });
+    await copyRoomLink();
+  });
+}
+if (elements.roomIdInput) {
+  elements.roomIdInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      joinRoomFlow();
+    }
+  });
 }
 if (elements.clearStorage) {
   elements.clearStorage.addEventListener("click", clearStorage);

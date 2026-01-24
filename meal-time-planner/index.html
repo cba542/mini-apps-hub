@@ -29,6 +29,22 @@
             <p id="current-person" class="muted" data-i18n="currentPerson">当前：-</p>
           </div>
 
+          <div class="room-panel">
+            <div class="room-row">
+              <button id="create-room" type="button" data-i18n="createRoom">创建房间</button>
+              <button id="join-room" type="button" class="ghost" data-i18n="joinRoom">加入房间</button>
+            </div>
+            <div class="room-row">
+              <input id="room-id" type="text" placeholder="输入房间号" data-i18n-placeholder="roomPlaceholder" />
+              <button id="copy-room" type="button" class="ghost" data-i18n="copyRoom">复制链接</button>
+            </div>
+            <div class="room-row">
+              <button id="save-room" type="button" data-i18n="saveRoom">保存</button>
+              <span></span>
+            </div>
+            <p class="room-status" id="room-status">未加入房间</p>
+          </div>
+
           <div class="people" id="people-list"></div>
 
           <div class="add-person">
@@ -47,7 +63,7 @@
             </div>
             <div class="mode-toggle">
               <button id="mode-calendar" type="button" data-i18n="calendarMode">月历模式</button>
-              <button id="mode-time" type="button" class="ghost" data-i18n="timeMode">时间段</button>
+              <button id="mode-time" type="button" class="ghost" data-i18n="timeMode" disabled>时间段</button>
             </div>
             <div class="config-grid">
               <label>

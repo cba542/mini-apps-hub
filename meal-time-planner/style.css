@@ -169,6 +169,31 @@ body {
   color: var(--accent-strong);
 }
 
+.room-panel {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(193, 100, 56, 0.2);
+  background: #fffaf6;
+}
+
+.room-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.room-row input {
+  width: 100%;
+}
+
+.room-status {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .add-person {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -176,6 +201,7 @@ body {
 }
 
 .add-person input,
+.room-row input,
 .config-grid input,
 .config-grid select {
   border: 1px solid rgba(145, 104, 78, 0.25);
@@ -186,6 +212,7 @@ body {
 }
 
 .add-person button,
+.room-row button,
 .control-actions button,
 .config button {
   border: none;
@@ -305,6 +332,14 @@ body {
 
 .mode-toggle button {
   width: 100%;
+}
+
+.mode-toggle button:disabled {
+  cursor: not-allowed;
+  color: rgba(47, 41, 34, 0.4);
+  background: #f0e7df;
+  border: 1px dashed rgba(47, 41, 34, 0.25);
+  box-shadow: none;
 }
 
 .config-grid {

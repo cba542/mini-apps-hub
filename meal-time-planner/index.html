@@ -9,55 +9,58 @@
   <body>
     <main class="app">
       <header class="hero">
-        <p class="eyebrow">Mini Apps Hub</p>
-        <h1>聚餐时间协调</h1>
-        <p>选择每个人有空的时间，直观看到共同空档</p>
+        <p class="eyebrow" data-i18n="eyebrow">Mini Apps Hub</p>
+        <h1 data-i18n="title">聚餐时间协调</h1>
+        <p data-i18n="subtitle">选择每个人有空的时间，直观看到共同空档</p>
       </header>
 
       <section class="layout">
         <aside class="panel panel--controls">
           <div class="panel-title">
-            <h2>参与者</h2>
-            <p id="current-person" class="muted">当前：-</p>
+            <h2 data-i18n="participants">参与者</h2>
+            <p id="current-person" class="muted" data-i18n="currentPerson">当前：-</p>
           </div>
 
           <div class="people" id="people-list"></div>
 
           <div class="add-person">
-            <input id="person-name" type="text" placeholder="输入名字" />
-            <button id="add-person" type="button">添加</button>
+            <input id="person-name" type="text" placeholder="输入名字" data-i18n-placeholder="namePlaceholder" />
+            <button id="add-person" type="button" data-i18n="add">添加</button>
           </div>
 
           <div class="control-actions">
-            <button id="clear-active" type="button">清空当前</button>
-            <button id="clear-all" type="button" class="ghost">全部清空</button>
+            <button id="clear-active" type="button" data-i18n="clearActive">清空当前</button>
+            <button id="clear-all" type="button" class="ghost" data-i18n="clearAll">全部清空</button>
           </div>
 
           <div class="config">
-            <h3>时间设置</h3>
+            <div class="config-title">
+              <h3 data-i18n="configTitle">时间设置</h3>
+              <button id="toggle-lang" type="button" class="ghost" data-i18n="langToggle">繁體中文</button>
+            </div>
             <div class="mode-toggle">
-              <button id="mode-calendar" type="button">月历模式</button>
-              <button id="mode-time" type="button" class="ghost">时间段</button>
+              <button id="mode-calendar" type="button" data-i18n="calendarMode">月历模式</button>
+              <button id="mode-time" type="button" class="ghost" data-i18n="timeMode">时间段</button>
             </div>
             <div class="config-grid">
               <label>
-                起始日期
+                <span data-i18n="startDate">起始日期</span>
                 <input id="start-date" type="date" />
               </label>
               <label>
-                结束日期
+                <span data-i18n="endDate">结束日期</span>
                 <input id="end-date" type="date" />
               </label>
               <label class="time-field">
-                每日开始
+                <span data-i18n="startTime">每日开始</span>
                 <input id="start-time" type="time" />
               </label>
               <label class="time-field">
-                每日结束
+                <span data-i18n="endTime">每日结束</span>
                 <input id="end-time" type="time" />
               </label>
               <label class="time-field">
-                粒度
+                <span data-i18n="step">粒度</span>
                 <select id="step-minutes">
                   <option value="15">15 分钟</option>
                   <option value="30">30 分钟</option>
@@ -65,45 +68,48 @@
                 </select>
               </label>
             </div>
-            <button id="apply-config" type="button">更新网格</button>
+            <div class="config-actions">
+              <button id="apply-config" type="button" data-i18n="apply">更新网格</button>
+              <button id="toggle-dots" type="button" class="ghost" data-i18n="showAll">显示全部</button>
+            </div>
           </div>
 
           <div class="info-card">
             <div>
-              <strong>时间范围</strong>
+              <strong data-i18n="range">时间范围</strong>
               <span id="range-text">-</span>
             </div>
             <div>
-              <strong>粒度</strong>
+              <strong data-i18n="stepLabel">粒度</strong>
               <span id="step-text">-</span>
             </div>
           </div>
 
           <div class="usage">
-            <h3>使用方式</h3>
+            <h3 data-i18n="usage">使用方式</h3>
             <ol>
-              <li>选择一个人并点击格子标记有空。</li>
-              <li>可按住拖拽连续日期或时间段。</li>
-              <li>其他人轮流标记各自有空的时间。</li>
-              <li>右侧会高亮大家都能的时段。</li>
+              <li data-i18n="usage1">选择一个人并点击格子标记有空。</li>
+              <li data-i18n="usage2">可按住拖拽连续日期或时间段。</li>
+              <li data-i18n="usage3">其他人轮流标记各自有空的时间。</li>
+              <li data-i18n="usage4">右侧会高亮大家都能的时段。</li>
             </ol>
           </div>
 
           <div class="export">
-            <h3>导出 / 导入</h3>
-            <textarea id="json-area" rows="6" placeholder="点击复制后会生成 JSON，可在这里粘贴导入"></textarea>
+            <h3 data-i18n="export">导出 / 导入</h3>
+            <textarea id="json-area" rows="6" placeholder="点击复制后会生成 JSON，可在这里粘贴导入" data-i18n-placeholder="exportPlaceholder"></textarea>
             <div class="export-actions">
-              <button id="copy-json" type="button">复制 JSON</button>
-              <button id="download-json" type="button" class="ghost">下载 JSON</button>
-              <button id="import-json" type="button" class="ghost">导入 JSON</button>
-              <button id="import-file" type="button" class="ghost">导入文件</button>
+              <button id="copy-json" type="button" data-i18n="copyJson">复制 JSON</button>
+              <button id="download-json" type="button" class="ghost" data-i18n="downloadJson">下载 JSON</button>
+              <button id="import-json" type="button" class="ghost" data-i18n="importJson">导入 JSON</button>
+              <button id="import-file" type="button" class="ghost" data-i18n="importFile">导入文件</button>
             </div>
             <input id="json-file" type="file" accept="application/json" hidden />
-            <p class="hint">导入会覆盖现有内容。</p>
+            <p class="hint" data-i18n="importHint">导入会覆盖现有内容。</p>
           </div>
 
           <div class="control-actions">
-            <button id="clear-storage" type="button" class="ghost">清除数据</button>
+            <button id="clear-storage" type="button" class="ghost" data-i18n="clearStorage">清除数据</button>
           </div>
 
           <p class="status" id="status-text"></p>
@@ -111,15 +117,8 @@
 
         <section class="panel panel--grid">
           <div class="panel-title">
-            <h2>时间表</h2>
-            <p class="muted">点击格子标记有空，颜色越深代表越多人可行。</p>
-          </div>
-
-          <div class="legend">
-            <span><i class="dot dot--empty"></i>无人选择</span>
-            <span><i class="dot dot--some"></i>部分有空</span>
-            <span><i class="dot dot--all"></i>共同空档</span>
-            <span><i class="dot dot--you"></i>当前选择</span>
+            <h2 data-i18n="scheduleTitle">时间表</h2>
+            <p class="muted" data-i18n="scheduleHint">点击格子标记有空，颜色越深代表越多人可行。</p>
           </div>
 
           <div class="schedule-wrap">
@@ -127,17 +126,18 @@
           </div>
 
           <div class="summary-bar">
-            <span id="summary-stats">已选人数：-</span>
-            <span id="summary-hint" class="muted">共同空档会自动汇总在下方</span>
+            <span id="summary-stats" data-i18n="summaryStats">已选人数：-</span>
+            <span id="summary-hint" class="muted" data-i18n="summaryHint">共同空档会自动汇总在下方</span>
           </div>
         </section>
       </section>
 
       <section class="panel panel--summary">
         <div class="panel-title">
-          <h2>共同空档</h2>
-          <p class="muted">所有人都勾选的日期或时间会显示在这里。</p>
+          <h2 data-i18n="summaryTitle">共同空档</h2>
+          <p class="muted" data-i18n="summaryDesc">日期条越长，代表越多人选择。</p>
         </div>
+        <div id="common-bars" class="common-bars"></div>
         <ul id="common-list" class="common-list"></ul>
       </section>
     </main>

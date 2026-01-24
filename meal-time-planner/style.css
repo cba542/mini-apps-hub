@@ -198,9 +198,21 @@ body {
   gap: 10px;
 }
 
+.config-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
 .config h3 {
   margin: 0;
   font-size: 14px;
+}
+
+.config-title .ghost {
+  padding: 6px 12px;
+  font-size: 12px;
 }
 
 .mode-toggle {
@@ -223,6 +235,16 @@ body {
 .config-grid label {
   display: grid;
   gap: 6px;
+}
+
+.config-actions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.config-actions button {
+  pointer-events: auto;
 }
 
 .time-field.is-hidden {
@@ -296,44 +318,6 @@ body {
 .panel--grid {
   display: grid;
   gap: 14px;
-}
-
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 1px solid rgba(47, 41, 34, 0.2);
-  display: inline-block;
-}
-
-.dot--empty {
-  background: #f4ece4;
-}
-
-.dot--some {
-  background: #f3d2bc;
-}
-
-.dot--all {
-  background: #c16438;
-}
-
-.dot--you {
-  background: #f1b15f;
 }
 
 .schedule-wrap {
@@ -471,6 +455,55 @@ body {
 .panel--summary {
   display: grid;
   gap: 10px;
+}
+
+.common-bars {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.common-bar {
+  display: grid;
+  grid-template-columns: minmax(120px, 160px) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(193, 100, 56, 0.2);
+  background: #fffaf6;
+  font-size: 12px;
+}
+
+.common-bar-label {
+  font-weight: 600;
+  color: var(--accent-strong);
+}
+
+.common-bar-track {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(193, 100, 56, 0.15);
+  overflow: hidden;
+}
+
+.common-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f2b37c, #c16438);
+}
+
+.common-bar-count {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.common-empty {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed rgba(193, 100, 56, 0.2);
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .common-list {

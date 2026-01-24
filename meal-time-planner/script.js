@@ -51,6 +51,7 @@ const state = {
   mode: MODE_CALENDAR,
   showOthers: false,
   lang: "zh-CN",
+  weekOffset: 0,
   config: { ...defaultConfig },
   drag: {
     active: false,
@@ -78,6 +79,9 @@ const elements = {
   summaryStats: document.getElementById("summary-stats"),
   commonList: document.getElementById("common-list"),
   commonBars: document.getElementById("common-bars"),
+  weekPrev: document.getElementById("week-prev"),
+  weekNext: document.getElementById("week-next"),
+  weekRange: document.getElementById("week-range"),
   startDate: document.getElementById("start-date"),
   endDate: document.getElementById("end-date"),
   startTime: document.getElementById("start-time"),
@@ -165,9 +169,34 @@ const formatDate = (date) => {
 };
 
 const formatTime = (minutes) => {
-  const hour = String(Math.floor(minutes / 60)).padStart(2, "0");
-  const minute = String(minutes % 60).padStart(2, "0");
-  return `${hour}:${minute}`;
+  const hour = Math.floor(minutes / 60);
+  const minute = minutes % 60;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+};
+
+const isMobileView = () => window.matchMedia("(max-width: 600px)").matches;
+
+const getWeekDays = () => {
+  const startDate = parseDate(state.config.startDate);
+  const endDate = parseDate(state.config.endDate);
+  if (!startDate || !endDate) {
+    return [];
+  }
+  const start = new Date(startDate);
+  start.setHours(12, 0, 0, 0);
+  start.setDate(start.getDate() + state.weekOffset * 7);
+  const end = new Date(endDate);
+  end.setHours(12, 0, 0, 0);
+  const days = [];
+  const cursor = new Date(start);
+  for (let i = 0; i < 7; i += 1) {
+    if (cursor > end) {
+      break;
+    }
+    days.push(new Date(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return days;
 };
 
 const buildDays = (startDate, endDate) => {
@@ -229,13 +258,17 @@ const generateSlots = () => {
 
 const buildScheduleGrid = () => {
   elements.schedule.innerHTML = "";
+  const mobile = isMobileView();
+  const viewDays = mobile ? getWeekDays() : state.days;
   if (state.mode === MODE_CALENDAR) {
     elements.schedule.classList.add("schedule--calendar");
-    elements.schedule.style.gridTemplateColumns = "repeat(7, minmax(96px, 1fr))";
-    elements.schedule.style.gridTemplateRows = "48px";
-    elements.schedule.style.gridAutoRows = "96px";
+    elements.schedule.style.gridTemplateColumns = mobile
+      ? "repeat(7, minmax(44px, 1fr))"
+      : "repeat(7, minmax(96px, 1fr))";
+    elements.schedule.style.gridTemplateRows = mobile ? "40px" : "48px";
+    elements.schedule.style.gridAutoRows = mobile ? "64px" : "96px";
 
-    const startWeekday = state.days[0]?.getDay() ?? 0;
+    const startWeekday = viewDays[0]?.getDay() ?? 0;
     labels.weekdays.forEach((label) => {
       const cell = document.createElement("div");
       cell.className = "day-cell day-cell--week";
@@ -243,16 +276,23 @@ const buildScheduleGrid = () => {
       elements.schedule.appendChild(cell);
     });
 
-    for (let i = 0; i < startWeekday; i += 1) {
-      const filler = document.createElement("div");
-      filler.className = "day-cell day-cell--blank";
-      elements.schedule.appendChild(filler);
+    if (!mobile) {
+      for (let i = 0; i < startWeekday; i += 1) {
+        const filler = document.createElement("div");
+        filler.className = "day-cell day-cell--blank";
+        elements.schedule.appendChild(filler);
+      }
     }
 
-    state.slots.forEach((slot, index) => {
+    viewDays.forEach((date) => {
+      const dateKey = formatDateKey(date);
+      const slot = state.slots.find((entry) => entry.dateKey === dateKey);
+      if (!slot) {
+        return;
+      }
       const cell = document.createElement("div");
-      const showMonthTag = index === 0 || slot.date.getDate() === 1;
-      const monthIndex = slot.date.getMonth();
+      const showMonthTag = date.getDate() === 1 || (!mobile && slot.dayIndex === 0);
+      const monthIndex = date.getMonth();
       const monthColor = MONTH_COLORS[monthIndex % MONTH_COLORS.length];
       const monthTag = showMonthTag
         ? `<span class="month-tag" style="--month-color: ${monthColor}">${monthIndex + 1}月</span>`
@@ -262,31 +302,37 @@ const buildScheduleGrid = () => {
       cell.dataset.dayIndex = String(slot.dayIndex);
       cell.dataset.level = "0";
       cell.innerHTML = `
-        <span class="calendar-day">${slot.date.getDate()}</span>
+        <span class="calendar-day">${date.getDate()}</span>
         ${monthTag}
         <div class="calendar-dots"></div>
       `;
       cell.addEventListener("pointerdown", handlePointerDown);
       elements.schedule.appendChild(cell);
     });
+    updateWeekRange(viewDays);
     return;
   }
 
   elements.schedule.classList.remove("schedule--calendar");
   elements.schedule.style.gridAutoRows = "";
-  const daysCount = state.days.length;
+  const daysCount = viewDays.length;
   const startMinutes = parseTimeMinutes(state.config.startTime);
   const endMinutes = parseTimeMinutes(state.config.endTime);
   const slotsPerDay = (endMinutes - startMinutes) / state.config.stepMinutes;
-  elements.schedule.style.gridTemplateColumns = `120px repeat(${daysCount}, minmax(60px, 1fr))`;
-  elements.schedule.style.gridTemplateRows = `48px repeat(${slotsPerDay}, 32px)`;
+  const dayColumn = mobile ? "minmax(40px, 1fr)" : "minmax(60px, 1fr)";
+  elements.schedule.style.gridTemplateColumns = mobile
+    ? `56px repeat(${daysCount}, ${dayColumn})`
+    : `120px repeat(${daysCount}, ${dayColumn})`;
+  elements.schedule.style.gridTemplateRows = mobile
+    ? `40px repeat(${slotsPerDay}, 28px)`
+    : `48px repeat(${slotsPerDay}, 32px)`;
 
   const headerBlank = document.createElement("div");
   headerBlank.className = "day-cell";
   headerBlank.textContent = "时间";
   elements.schedule.appendChild(headerBlank);
 
-  state.days.forEach((date) => {
+  viewDays.forEach((date) => {
     const cell = document.createElement("div");
     cell.className = "day-cell";
     const week = labels.weekdays[date.getDay()];
@@ -302,8 +348,22 @@ const buildScheduleGrid = () => {
     elements.schedule.appendChild(timeCell);
 
     for (let dayIndex = 0; dayIndex < daysCount; dayIndex += 1) {
-      const slotIndex = rowIndex * daysCount + dayIndex;
-      const slot = state.slots[slotIndex];
+      const date = viewDays[dayIndex];
+      const dateKey = formatDateKey(date);
+      const slot = state.slots.find((entry) => entry.dateKey === dateKey && entry.hour != null);
+      if (!slot) {
+        const empty = document.createElement("div");
+        empty.className = "slot";
+        elements.schedule.appendChild(empty);
+        continue;
+      }
+      const minutesForSlot = slot.hour * 60 + slot.minute;
+      if (minutesForSlot !== minutes) {
+        const empty = document.createElement("div");
+        empty.className = "slot";
+        elements.schedule.appendChild(empty);
+        continue;
+      }
       const cell = document.createElement("div");
       cell.className = "slot";
       cell.dataset.slotId = slot.id;
@@ -314,6 +374,7 @@ const buildScheduleGrid = () => {
     }
     rowIndex += 1;
   }
+  updateWeekRange(viewDays);
 };
 
 const renderPeople = () => {
@@ -714,6 +775,7 @@ const serializeState = () => ({
   mode: state.mode,
   showOthers: state.showOthers,
   lang: state.lang,
+  weekOffset: state.weekOffset,
   activePersonId: state.activePersonId,
   people: state.people.map((person) => ({
     id: person.id,
@@ -737,6 +799,9 @@ const applyStateData = (data) => {
   }
   if (data.lang === "zh-TW" || data.lang === "zh-CN") {
     state.lang = data.lang;
+  }
+  if (Number.isInteger(data.weekOffset)) {
+    state.weekOffset = data.weekOffset;
   }
   if (Array.isArray(data.people) && data.people.length) {
     state.people = data.people.map((person) => ({
@@ -941,6 +1006,7 @@ const updateModeUI = () => {
   if (elements.toggleDots) {
     elements.toggleDots.classList.toggle("ghost", !state.showOthers);
   }
+  updateWeekNav();
   applyLanguage();
   updateInfoCard();
   updateCurrentPerson();
@@ -974,6 +1040,47 @@ const toggleOthers = () => {
   updateJsonArea();
 };
 
+const updateWeekRange = (days) => {
+  if (!elements.weekRange) {
+    return;
+  }
+  if (!days || !days.length) {
+    elements.weekRange.textContent = "-";
+    return;
+  }
+  elements.weekRange.textContent = `${formatDate(days[0])} - ${formatDate(days[days.length - 1])}`;
+};
+
+const updateWeekNav = () => {
+  const show = isMobileView();
+  if (elements.weekPrev) {
+    elements.weekPrev.disabled = !show || state.weekOffset <= 0;
+  }
+  if (elements.weekNext) {
+    const totalDays = state.days.length;
+    const maxOffset = Math.max(0, Math.ceil(totalDays / 7) - 1);
+    elements.weekNext.disabled = !show || state.weekOffset >= maxOffset;
+  }
+  if (!show) {
+    updateWeekRange([]);
+  }
+};
+
+const changeWeek = (direction) => {
+  const totalDays = state.days.length;
+  const maxOffset = Math.max(0, Math.ceil(totalDays / 7) - 1);
+  const nextOffset = clamp(state.weekOffset + direction, 0, maxOffset);
+  if (nextOffset === state.weekOffset) {
+    return;
+  }
+  state.weekOffset = nextOffset;
+  buildScheduleGrid();
+  updateGridVisuals();
+  updateSummary();
+  updateModeUI();
+  saveState();
+};
+
 const I18N = {
   "zh-CN": {
     eyebrow: "Mini Apps Hub",
@@ -996,6 +1103,8 @@ const I18N = {
     apply: "更新网格",
     showAll: "显示全部",
     hideAll: "隐藏全部",
+    prevWeek: "上一周",
+    nextWeek: "下一周",
     range: "时间范围",
     stepLabel: "粒度",
     usage: "使用方式",
@@ -1025,7 +1134,6 @@ const I18N = {
     promptRename: "请输入新的名字",
     renameEmpty: "名字不能为空。",
     renameSuccess: "名字已更新。",
-    renameHint: "点击姓名即可编辑",
     addPerson: "已添加新参与者。",
     nameRequired: "请输入名字。",
     selectPerson: "请先选择一个人。",
@@ -1070,6 +1178,8 @@ const I18N = {
     apply: "更新網格",
     showAll: "顯示全部",
     hideAll: "隱藏全部",
+    prevWeek: "上一週",
+    nextWeek: "下一週",
     range: "時間範圍",
     stepLabel: "粒度",
     usage: "使用方式",
@@ -1099,7 +1209,6 @@ const I18N = {
     promptRename: "請輸入新的名字",
     renameEmpty: "名字不能為空。",
     renameSuccess: "名字已更新。",
-    renameHint: "點擊姓名即可編輯",
     addPerson: "已新增參與者。",
     nameRequired: "請輸入名字。",
     selectPerson: "請先選擇一個人。",
@@ -1284,6 +1393,9 @@ const init = () => {
   if (state.lang !== "zh-CN" && state.lang !== "zh-TW") {
     state.lang = "zh-CN";
   }
+  if (!Number.isInteger(state.weekOffset)) {
+    state.weekOffset = 0;
+  }
   syncInputs();
   updateModeUI();
   applyLanguage();
@@ -1324,6 +1436,7 @@ const init = () => {
   updateInfoCard();
   updateJsonArea();
   updateModeUI();
+  updateWeekRange(isMobileView() ? getWeekDays() : []);
   updateStatusKey("ready");
   applyLanguage();
 };
@@ -1369,6 +1482,12 @@ if (elements.toggleLang) {
   elements.toggleLang.addEventListener("change", (event) => {
     toggleLanguage(event.target.checked);
   });
+}
+if (elements.weekPrev) {
+  elements.weekPrev.addEventListener("click", () => changeWeek(-1));
+}
+if (elements.weekNext) {
+  elements.weekNext.addEventListener("click", () => changeWeek(1));
 }
 if (elements.clearStorage) {
   elements.clearStorage.addEventListener("click", clearStorage);

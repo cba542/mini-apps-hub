@@ -8,6 +8,14 @@
   </head>
   <body>
     <main class="app">
+      <div class="lang-toggle">
+        <span class="lang-label">简</span>
+        <label class="switch">
+          <input id="toggle-lang" type="checkbox" aria-label="language toggle" />
+          <span class="slider"></span>
+        </label>
+        <span class="lang-label">繁</span>
+      </div>
       <header class="hero">
         <p class="eyebrow" data-i18n="eyebrow">Mini Apps Hub</p>
         <h1 data-i18n="title">聚餐时间协调</h1>
@@ -36,7 +44,6 @@
           <div class="config">
             <div class="config-title">
               <h3 data-i18n="configTitle">时间设置</h3>
-              <button id="toggle-lang" type="button" class="ghost" data-i18n="langToggle">繁體中文</button>
             </div>
             <div class="mode-toggle">
               <button id="mode-calendar" type="button" data-i18n="calendarMode">月历模式</button>

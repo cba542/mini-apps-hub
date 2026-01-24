@@ -325,12 +325,11 @@ const renderPeople = () => {
       item.classList.add("active");
     }
     item.innerHTML = `
-      <span class="person-name">
+      <span class="person-name" data-id="${person.id}">
         <i class="person-dot" style="--dot-color: ${PERSON_COLORS[index % PERSON_COLORS.length]}"></i>
-        ${person.name}
+        <span class="person-label">${person.name}</span>
       </span>
       <div class="person-actions">
-        <button type="button" class="person-edit" data-id="${person.id}">改名</button>
         <button type="button" class="person-remove" data-id="${person.id}">×</button>
       </div>
     `;
@@ -339,8 +338,8 @@ const renderPeople = () => {
         removePerson(person.id);
         return;
       }
-      if (event.target.matches(".person-edit")) {
-        renamePerson(person.id);
+      if (event.target.closest(".person-name")) {
+        startRename(person.id, event.target.closest(".person-name"));
         return;
       }
       setActivePerson(person.id);
@@ -406,27 +405,61 @@ const removePerson = (id) => {
   updateJsonArea();
 };
 
-const renamePerson = (id) => {
+const renamePerson = (id, nextName) => {
   const person = state.people.find((entry) => entry.id === id);
   if (!person) {
-    return;
-  }
-  const dict = I18N[state.lang] || I18N["zh-CN"];
-  const nextName = window.prompt(dict.promptRename || "请输入新的名字", person.name);
-  if (!nextName) {
-    return;
+    return false;
   }
   const trimmed = nextName.trim();
   if (!trimmed) {
-    updateStatus(dict.renameEmpty || "名字不能为空。");
-    return;
+    updateStatusKey("renameEmpty");
+    return false;
   }
   person.name = trimmed;
   renderPeople();
   updateSummary();
   saveState();
   updateJsonArea();
-  updateStatus(dict.renameSuccess || "名字已更新。");
+  updateStatusKey("renameSuccess");
+  applyLanguage();
+  return true;
+};
+
+const startRename = (id, nameEl) => {
+  const person = state.people.find((entry) => entry.id === id);
+  if (!person || !nameEl) {
+    return;
+  }
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = person.name;
+  input.className = "rename-input";
+  const label = nameEl.querySelector(".person-label");
+  if (!label) {
+    return;
+  }
+  nameEl.replaceChild(input, label);
+  input.focus();
+  input.select();
+
+  const finish = (save) => {
+    const value = input.value;
+    if (save) {
+      renamePerson(id, value);
+    } else {
+      renderPeople();
+    }
+  };
+
+  input.addEventListener("blur", () => finish(true));
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      finish(true);
+    }
+    if (event.key === "Escape") {
+      finish(false);
+    }
+  });
 };
 
 
@@ -953,7 +986,6 @@ const I18N = {
     clearActive: "清空当前",
     clearAll: "全部清空",
     configTitle: "时间设置",
-    langToggle: "繁體中文",
     calendarMode: "月历模式",
     timeMode: "时间段",
     startDate: "起始日期",
@@ -993,6 +1025,7 @@ const I18N = {
     promptRename: "请输入新的名字",
     renameEmpty: "名字不能为空。",
     renameSuccess: "名字已更新。",
+    renameHint: "点击姓名即可编辑",
     addPerson: "已添加新参与者。",
     nameRequired: "请输入名字。",
     selectPerson: "请先选择一个人。",
@@ -1027,7 +1060,6 @@ const I18N = {
     clearActive: "清空當前",
     clearAll: "全部清空",
     configTitle: "時間設定",
-    langToggle: "简体中文",
     calendarMode: "月曆模式",
     timeMode: "時間段",
     startDate: "起始日期",
@@ -1067,6 +1099,7 @@ const I18N = {
     promptRename: "請輸入新的名字",
     renameEmpty: "名字不能為空。",
     renameSuccess: "名字已更新。",
+    renameHint: "點擊姓名即可編輯",
     addPerson: "已新增參與者。",
     nameRequired: "請輸入名字。",
     selectPerson: "請先選擇一個人。",
@@ -1110,12 +1143,12 @@ const applyLanguage = () => {
     elements.toggleDots.textContent = state.showOthers ? dict.hideAll : dict.showAll;
   }
   if (elements.toggleLang) {
-    elements.toggleLang.textContent = dict.langToggle;
+    elements.toggleLang.checked = state.lang === "zh-TW";
   }
 };
 
-const toggleLanguage = () => {
-  state.lang = state.lang === "zh-TW" ? "zh-CN" : "zh-TW";
+const toggleLanguage = (checked) => {
+  state.lang = checked ? "zh-TW" : "zh-CN";
   applyLanguage();
   saveState();
 };
@@ -1333,7 +1366,9 @@ if (elements.toggleDots) {
   });
 }
 if (elements.toggleLang) {
-  elements.toggleLang.addEventListener("click", toggleLanguage);
+  elements.toggleLang.addEventListener("change", (event) => {
+    toggleLanguage(event.target.checked);
+  });
 }
 if (elements.clearStorage) {
   elements.clearStorage.addEventListener("click", clearStorage);

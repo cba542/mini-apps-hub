@@ -52,6 +52,7 @@ const state = {
   showOthers: false,
   lang: "zh-CN",
   weekOffset: 0,
+  monthOffset: 0,
   config: { ...defaultConfig },
   drag: {
     active: false,
@@ -79,9 +80,9 @@ const elements = {
   summaryStats: document.getElementById("summary-stats"),
   commonList: document.getElementById("common-list"),
   commonBars: document.getElementById("common-bars"),
-  weekPrev: document.getElementById("week-prev"),
-  weekNext: document.getElementById("week-next"),
-  weekRange: document.getElementById("week-range"),
+  monthPrev: document.getElementById("month-prev"),
+  monthNext: document.getElementById("month-next"),
+  monthRange: document.getElementById("month-range"),
   startDate: document.getElementById("start-date"),
   endDate: document.getElementById("end-date"),
   startTime: document.getElementById("start-time"),
@@ -176,23 +177,38 @@ const formatTime = (minutes) => {
 
 const isMobileView = () => window.matchMedia("(max-width: 600px)").matches;
 
-const getWeekDays = () => {
+const getMonthContext = () => {
   const startDate = parseDate(state.config.startDate);
   const endDate = parseDate(state.config.endDate);
   if (!startDate || !endDate) {
+    return null;
+  }
+  const base = new Date(startDate);
+  base.setHours(12, 0, 0, 0);
+  base.setMonth(base.getMonth() + state.monthOffset, 1);
+  const monthStart = new Date(base.getFullYear(), base.getMonth(), 1, 12, 0, 0, 0);
+  const monthEnd = new Date(base.getFullYear(), base.getMonth() + 1, 0, 12, 0, 0, 0);
+  const rangeStart = new Date(startDate);
+  rangeStart.setHours(12, 0, 0, 0);
+  const rangeEnd = new Date(endDate);
+  rangeEnd.setHours(12, 0, 0, 0);
+  return {
+    monthStart,
+    monthEnd,
+    rangeStart,
+    rangeEnd,
+  };
+};
+
+const getMonthDays = () => {
+  const context = getMonthContext();
+  if (!context) {
     return [];
   }
-  const start = new Date(startDate);
-  start.setHours(12, 0, 0, 0);
-  start.setDate(start.getDate() + state.weekOffset * 7);
-  const end = new Date(endDate);
-  end.setHours(12, 0, 0, 0);
+  const { monthStart, monthEnd } = context;
   const days = [];
-  const cursor = new Date(start);
-  for (let i = 0; i < 7; i += 1) {
-    if (cursor > end) {
-      break;
-    }
+  const cursor = new Date(monthStart);
+  while (cursor <= monthEnd) {
     days.push(new Date(cursor));
     cursor.setDate(cursor.getDate() + 1);
   }
@@ -259,11 +275,11 @@ const generateSlots = () => {
 const buildScheduleGrid = () => {
   elements.schedule.innerHTML = "";
   const mobile = isMobileView();
-  const viewDays = mobile ? getWeekDays() : state.days;
+  const viewDays = mobile ? getMonthDays() : state.days;
   if (state.mode === MODE_CALENDAR) {
     elements.schedule.classList.add("schedule--calendar");
     elements.schedule.style.gridTemplateColumns = mobile
-      ? "repeat(7, minmax(44px, 1fr))"
+      ? "repeat(7, 1fr)"
       : "repeat(7, minmax(96px, 1fr))";
     elements.schedule.style.gridTemplateRows = mobile ? "40px" : "48px";
     elements.schedule.style.gridAutoRows = mobile ? "64px" : "96px";
@@ -276,18 +292,20 @@ const buildScheduleGrid = () => {
       elements.schedule.appendChild(cell);
     });
 
-    if (!mobile) {
-      for (let i = 0; i < startWeekday; i += 1) {
-        const filler = document.createElement("div");
-        filler.className = "day-cell day-cell--blank";
-        elements.schedule.appendChild(filler);
-      }
+    const fillerCount = mobile ? startWeekday : startWeekday;
+    for (let i = 0; i < fillerCount; i += 1) {
+      const filler = document.createElement("div");
+      filler.className = "day-cell day-cell--blank";
+      elements.schedule.appendChild(filler);
     }
 
     viewDays.forEach((date) => {
       const dateKey = formatDateKey(date);
       const slot = state.slots.find((entry) => entry.dateKey === dateKey);
       if (!slot) {
+        const empty = document.createElement("div");
+        empty.className = "slot slot--calendar";
+        elements.schedule.appendChild(empty);
         return;
       }
       const cell = document.createElement("div");
@@ -309,7 +327,7 @@ const buildScheduleGrid = () => {
       cell.addEventListener("pointerdown", handlePointerDown);
       elements.schedule.appendChild(cell);
     });
-    updateWeekRange(viewDays);
+    updateMonthRange(viewDays);
     return;
   }
 
@@ -374,7 +392,7 @@ const buildScheduleGrid = () => {
     }
     rowIndex += 1;
   }
-  updateWeekRange(viewDays);
+  updateMonthRange(viewDays);
 };
 
 const renderPeople = () => {
@@ -776,6 +794,7 @@ const serializeState = () => ({
   showOthers: state.showOthers,
   lang: state.lang,
   weekOffset: state.weekOffset,
+  monthOffset: state.monthOffset,
   activePersonId: state.activePersonId,
   people: state.people.map((person) => ({
     id: person.id,
@@ -802,6 +821,9 @@ const applyStateData = (data) => {
   }
   if (Number.isInteger(data.weekOffset)) {
     state.weekOffset = data.weekOffset;
+  }
+  if (Number.isInteger(data.monthOffset)) {
+    state.monthOffset = data.monthOffset;
   }
   if (Array.isArray(data.people) && data.people.length) {
     state.people = data.people.map((person) => ({
@@ -1006,7 +1028,7 @@ const updateModeUI = () => {
   if (elements.toggleDots) {
     elements.toggleDots.classList.toggle("ghost", !state.showOthers);
   }
-  updateWeekNav();
+  updateMonthNav();
   applyLanguage();
   updateInfoCard();
   updateCurrentPerson();
@@ -1040,40 +1062,36 @@ const toggleOthers = () => {
   updateJsonArea();
 };
 
-const updateWeekRange = (days) => {
-  if (!elements.weekRange) {
+const updateMonthRange = (days) => {
+  if (!elements.monthRange) {
     return;
   }
-  if (!days || !days.length) {
-    elements.weekRange.textContent = "-";
+  const context = getMonthContext();
+  if (!context) {
+    elements.monthRange.textContent = "-";
     return;
   }
-  elements.weekRange.textContent = `${formatDate(days[0])} - ${formatDate(days[days.length - 1])}`;
+  const { monthStart } = context;
+  elements.monthRange.textContent = `${monthStart.getFullYear()}年${monthStart.getMonth() + 1}月`;
 };
 
-const updateWeekNav = () => {
+const updateMonthNav = () => {
   const show = isMobileView();
-  if (elements.weekPrev) {
-    elements.weekPrev.disabled = !show || state.weekOffset <= 0;
+  if (elements.monthPrev) {
+    elements.monthPrev.disabled = !show;
   }
-  if (elements.weekNext) {
-    const totalDays = state.days.length;
-    const maxOffset = Math.max(0, Math.ceil(totalDays / 7) - 1);
-    elements.weekNext.disabled = !show || state.weekOffset >= maxOffset;
+  if (elements.monthNext) {
+    elements.monthNext.disabled = !show;
   }
   if (!show) {
-    updateWeekRange([]);
+    if (elements.monthRange) {
+      elements.monthRange.textContent = "-";
+    }
   }
 };
 
-const changeWeek = (direction) => {
-  const totalDays = state.days.length;
-  const maxOffset = Math.max(0, Math.ceil(totalDays / 7) - 1);
-  const nextOffset = clamp(state.weekOffset + direction, 0, maxOffset);
-  if (nextOffset === state.weekOffset) {
-    return;
-  }
-  state.weekOffset = nextOffset;
+const changeMonth = (direction) => {
+  state.monthOffset += direction;
   buildScheduleGrid();
   updateGridVisuals();
   updateSummary();
@@ -1103,8 +1121,8 @@ const I18N = {
     apply: "更新网格",
     showAll: "显示全部",
     hideAll: "隐藏全部",
-    prevWeek: "上一周",
-    nextWeek: "下一周",
+    prevMonth: "上一月",
+    nextMonth: "下一月",
     range: "时间范围",
     stepLabel: "粒度",
     usage: "使用方式",
@@ -1178,8 +1196,8 @@ const I18N = {
     apply: "更新網格",
     showAll: "顯示全部",
     hideAll: "隱藏全部",
-    prevWeek: "上一週",
-    nextWeek: "下一週",
+    prevMonth: "上一月",
+    nextMonth: "下一月",
     range: "時間範圍",
     stepLabel: "粒度",
     usage: "使用方式",
@@ -1396,6 +1414,9 @@ const init = () => {
   if (!Number.isInteger(state.weekOffset)) {
     state.weekOffset = 0;
   }
+  if (!Number.isInteger(state.monthOffset)) {
+    state.monthOffset = 0;
+  }
   syncInputs();
   updateModeUI();
   applyLanguage();
@@ -1436,7 +1457,7 @@ const init = () => {
   updateInfoCard();
   updateJsonArea();
   updateModeUI();
-  updateWeekRange(isMobileView() ? getWeekDays() : []);
+  updateMonthRange(isMobileView() ? getMonthDays() : []);
   updateStatusKey("ready");
   applyLanguage();
 };
@@ -1483,11 +1504,11 @@ if (elements.toggleLang) {
     toggleLanguage(event.target.checked);
   });
 }
-if (elements.weekPrev) {
-  elements.weekPrev.addEventListener("click", () => changeWeek(-1));
+if (elements.monthPrev) {
+  elements.monthPrev.addEventListener("click", () => changeMonth(-1));
 }
-if (elements.weekNext) {
-  elements.weekNext.addEventListener("click", () => changeWeek(1));
+if (elements.monthNext) {
+  elements.monthNext.addEventListener("click", () => changeMonth(1));
 }
 if (elements.clearStorage) {
   elements.clearStorage.addEventListener("click", clearStorage);

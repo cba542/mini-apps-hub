@@ -412,19 +412,19 @@ body {
   touch-action: pan-x pan-y;
 }
 
-.week-nav {
+.month-nav {
   display: none;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
 
-.week-nav button {
+.month-nav button {
   border-radius: 999px;
   padding: 6px 12px;
 }
 
-.week-range {
+.month-range {
   font-size: 13px;
   color: var(--accent-strong);
   font-weight: 600;
@@ -497,32 +497,32 @@ body {
 
   .schedule--calendar .slot {
     width: auto;
-    height: 64px;
+    height: 56px;
   }
 
   .slot--calendar {
-    height: 64px;
-    padding: 6px;
+    height: 56px;
+    padding: 4px;
   }
 
   .calendar-day {
-    top: 6px;
-    left: 6px;
-    font-size: 12px;
+    top: 4px;
+    left: 4px;
+    font-size: 11px;
   }
 
   .month-tag {
-    top: 6px;
-    right: 6px;
-    font-size: 9px;
+    top: 4px;
+    right: 4px;
+    font-size: 8px;
     padding: 1px 4px;
   }
 
   .calendar-dots {
-    bottom: 6px;
-    left: 6px;
-    right: 6px;
-    gap: 4px;
+    bottom: 4px;
+    left: 4px;
+    right: 4px;
+    gap: 3px;
   }
 }
 
@@ -706,7 +706,7 @@ body {
     width: 64px;
   }
 
-  .week-nav {
+  .month-nav {
     display: flex;
   }
 

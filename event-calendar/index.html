@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>嘉年华/UP券月历</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero__title">
+        <p class="eyebrow">活动日历</p>
+        <h1>嘉年华 / UP券 月历视图</h1>
+        <p class="lede">调整起始日，快速查看每日重叠与主题。</p>
+      </div>
+      <div class="hero__actions">
+        <a class="ghost" href="/">返回首页</a>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <div class="controls">
+          <div class="control-group">
+            <label for="carnival-start">嘉年华起始日</label>
+            <input id="carnival-start" type="date" />
+          </div>
+          <div class="control-group">
+            <label for="up-start">UP券起始日</label>
+            <input id="up-start" type="date" />
+          </div>
+          <div class="control-group control-group--buttons">
+            <button id="apply">重排</button>
+            <button id="export" class="ghost">导出图片</button>
+          </div>
+        </div>
+        <div class="legend">
+          <span class="pill pill--carnival">嘉年华</span>
+          <span class="pill pill--up">UP券</span>
+        </div>
+      </section>
+
+      <section class="panel calendar-panel">
+        <div class="calendar-head">
+          <h2 id="range-title"></h2>
+          <div class="month-nav">
+            <button id="month-prev" class="ghost" type="button">上一月</button>
+            <span class="muted" id="month-label">-</span>
+            <button id="month-next" class="ghost" type="button">下一月</button>
+          </div>
+        </div>
+        <div class="weekdays" aria-hidden="true">
+          <span>日</span>
+          <span>一</span>
+          <span>二</span>
+          <span>三</span>
+          <span>四</span>
+          <span>五</span>
+          <span>六</span>
+        </div>
+        <div id="calendar" class="calendar"></div>
+      </section>
+    </main>
+
+    <template id="day-template">
+      <div class="day">
+        <div class="day__date"></div>
+        <div class="day__badges"></div>
+      </div>
+    </template>
+
+    <div class="sr-only" id="export-fig"></div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

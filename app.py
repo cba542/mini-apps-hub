@@ -5,7 +5,7 @@ import sys
 import os
 import sqlite3
 import string
-import random
+import random   
 import time
 
 from flask import Flask, redirect, render_template, send_from_directory, jsonify, request, abort
@@ -14,8 +14,10 @@ from flask import Flask, redirect, render_template, send_from_directory, jsonify
 APP_PATH = "/dianping-review"
 WEB_GAME_PATH = "/web-game-egg"
 MEAL_PLANNER_PATH = "/meal-time-planner"
+EVENT_CAL_PATH = "/event-calendar"
 WEB_GAME_DIR = os.path.join(os.path.dirname(__file__), "web-game-egg")
 MEAL_PLANNER_DIR = os.path.join(os.path.dirname(__file__), "meal-time-planner")
+EVENT_CAL_DIR = os.path.join(os.path.dirname(__file__), "event-calendar")
 DIANPING_APP_PATH = os.path.join(os.path.dirname(__file__), "dianping-review", "app.py")
 
 app = Flask(__name__)
@@ -92,6 +94,7 @@ def get_links() -> list[dict]:
         {"name": "Dianping Review Generator", "path": APP_PATH},
         {"name": "Web Game Egg", "path": f"{WEB_GAME_PATH}/"},
         {"name": "Meal Time Planner", "path": f"{MEAL_PLANNER_PATH}/"},
+        {"name": "嘉年华/UP券月历", "path": f"{EVENT_CAL_PATH}/"},
     ]
 
 
@@ -181,6 +184,21 @@ def meal_planner_index():
 @app.route(f"{MEAL_PLANNER_PATH}/<path:filename>")
 def meal_planner_assets(filename: str):
     return send_from_directory(MEAL_PLANNER_DIR, filename)
+
+
+@app.route(EVENT_CAL_PATH)
+def event_calendar_root():
+    return redirect(f"{EVENT_CAL_PATH}/", code=302)
+
+
+@app.route(f"{EVENT_CAL_PATH}/")
+def event_calendar_index():
+    return send_from_directory(EVENT_CAL_DIR, "index.html")
+
+
+@app.route(f"{EVENT_CAL_PATH}/<path:filename>")
+def event_calendar_assets(filename: str):
+    return send_from_directory(EVENT_CAL_DIR, filename)
 
 
 if __name__ == "__main__":

@@ -23,17 +23,41 @@
     <main class="layout">
       <section class="panel">
         <div class="controls">
-          <div class="control-group">
-            <label for="carnival-start">嘉年华起始日</label>
-            <input id="carnival-start" type="date" />
+          <div class="control-grid">
+            <div class="control-group">
+              <label for="carnival-start">嘉年华起始日</label>
+              <input id="carnival-start" type="date" />
+            </div>
+            <div class="control-group">
+              <label for="carnival-seq">嘉年华起始段</label>
+              <select id="carnival-seq" class="select select--carnival">
+                <option value="0" data-icon="img/嘉年华_胶囊.jpg">胶囊</option>
+                <option value="1" data-icon="img/嘉年华_开蛋.jpg">蛋壳</option>
+                <option value="2" data-icon="img/嘉年华_招唤券.jpg">招唤券</option>
+                <option value="3" data-icon="img/嘉年华_钓鱼.jpg">钓鱼</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label for="up-start">UP券起始日</label>
+              <input id="up-start" type="date" />
+            </div>
+            <div class="control-group">
+              <label for="up-seq">UP券起始段</label>
+              <select id="up-seq" class="select select--up">
+                <option value="0" data-icon="img/UP券_冰.png">冰</option>
+                <option value="1" data-icon="img/UP券_火.png">火</option>
+                <option value="2" data-icon="img/UP券_物理.png">物理</option>
+                <option value="3" data-icon="img/UP券_电.png">电</option>
+                <option value="4" data-icon="img/UP券_冰.png">冰</option>
+              </select>
+            </div>
           </div>
-          <div class="control-group">
-            <label for="up-start">UP券起始日</label>
-            <input id="up-start" type="date" />
-          </div>
-          <div class="control-group control-group--buttons">
-            <button id="apply">重排</button>
-            <button id="export" class="ghost">导出图片</button>
+          <div class="control-actions">
+            <div class="hint">修改后点击重排，导出当前视图。</div>
+            <div class="btn-row">
+              <button id="apply">重排</button>
+              <button id="export" class="ghost">导出图片</button>
+            </div>
           </div>
         </div>
         <div class="legend">

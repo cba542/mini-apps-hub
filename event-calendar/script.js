@@ -2,6 +2,8 @@
 
 const DEFAULT_CARNIVAL_START = "2026-02-07";
 const DEFAULT_UP_START = "2026-02-06";
+const DEFAULT_CARNIVAL_INDEX = 0;
+const DEFAULT_UP_INDEX = 0;
 
 const SEQS = {
   carnival: [
@@ -46,7 +48,9 @@ const IMAGE_MAP = {
 
 const elements = {
   carnivalStart: document.getElementById("carnival-start"),
+  carnivalSeq: document.getElementById("carnival-seq"),
   upStart: document.getElementById("up-start"),
+  upSeq: document.getElementById("up-seq"),
   apply: document.getElementById("apply"),
   exportBtn: document.getElementById("export"),
   calendarPanel: document.querySelector(".calendar-panel"),
@@ -61,6 +65,8 @@ const elements = {
 const state = {
   carnivalStart: parseDate(DEFAULT_CARNIVAL_START),
   upStart: parseDate(DEFAULT_UP_START),
+  carnivalSeqIndex: DEFAULT_CARNIVAL_INDEX,
+  upSeqIndex: DEFAULT_UP_INDEX,
   monthOffset: 0,
 };
 
@@ -90,35 +96,16 @@ function addDays(date, n) {
   return d;
 }
 
-function buildSegments(startDate, seq, type) {
+function buildCycledSegments(startDate, seq, type, stopDate, startIndex = 0) {
   const segments = [];
   let cursor = new Date(startDate.getTime());
-  seq.forEach((item) => {
-    const start = new Date(cursor.getTime());
-    const end = addDays(cursor, item.days - 1);
-    segments.push({ type, name: item.name, start, end, days: item.days });
-    cursor = addDays(cursor, item.days);
-  });
-  return segments;
-}
-
-function buildCycledSegments(startDate, seq, type, stopDate) {
-  const segments = [];
-  let cursor = new Date(startDate.getTime());
-  let seqIndex = 0;
-  let lastName = null;
+  let seqIndex = startIndex % seq.length;
   while (segments.length === 0 || cursor <= stopDate) {
     const item = seq[seqIndex];
-    // 避免连续重复（如冰接冰），若重复则跳到下一个
-    if (lastName === item.name) {
-      seqIndex = (seqIndex + 1) % seq.length;
-      continue;
-    }
     const start = new Date(cursor.getTime());
     const end = addDays(cursor, item.days - 1);
     segments.push({ type, name: item.name, start, end, days: item.days });
     cursor = addDays(cursor, item.days);
-    lastName = item.name;
     seqIndex = (seqIndex + 1) % seq.length;
   }
   // Trim segments that end after stopDate to align visually
@@ -258,18 +245,34 @@ function updateRangeTitle(visibleStart, visibleEnd) {
 function hydrateInputs() {
   const savedCarnival = localStorage.getItem("event-cal-carnival-start");
   const savedUp = localStorage.getItem("event-cal-up-start");
+  const savedCarnivalSeq = localStorage.getItem("event-cal-carnival-seq-index");
+  const savedUpSeq = localStorage.getItem("event-cal-up-seq-index");
   elements.carnivalStart.value = savedCarnival || DEFAULT_CARNIVAL_START;
   elements.upStart.value = savedUp || DEFAULT_UP_START;
+  if (elements.carnivalSeq) {
+    elements.carnivalSeq.value = savedCarnivalSeq ?? String(DEFAULT_CARNIVAL_INDEX);
+  }
+  if (elements.upSeq) {
+    elements.upSeq.value = savedUpSeq ?? String(DEFAULT_UP_INDEX);
+  }
 }
 
 function saveInputs() {
   localStorage.setItem("event-cal-carnival-start", elements.carnivalStart.value);
   localStorage.setItem("event-cal-up-start", elements.upStart.value);
+  if (elements.carnivalSeq) {
+    localStorage.setItem("event-cal-carnival-seq-index", elements.carnivalSeq.value);
+  }
+  if (elements.upSeq) {
+    localStorage.setItem("event-cal-up-seq-index", elements.upSeq.value);
+  }
 }
 
 function applySchedule() {
   const carnivalDate = parseDate(elements.carnivalStart.value);
   const upDate = parseDate(elements.upStart.value);
+  const carnivalSeqIndex = elements.carnivalSeq ? Number(elements.carnivalSeq.value) || 0 : 0;
+  const upSeqIndex = elements.upSeq ? Number(elements.upSeq.value) || 0 : 0;
   if (!carnivalDate || !upDate) {
     alert("请输入有效的起始日期");
     return;
@@ -278,6 +281,8 @@ function applySchedule() {
 
   state.carnivalStart = carnivalDate;
   state.upStart = upDate;
+  state.carnivalSeqIndex = carnivalSeqIndex;
+  state.upSeqIndex = upSeqIndex;
   state.monthOffset = clamp(state.monthOffset, -MAX_MONTH_OFFSET_BACK, MAX_MONTH_OFFSET_FORWARD);
   renderView();
 }
@@ -291,10 +296,15 @@ function getViewBounds(baseDate, monthOffset) {
 }
 
 function buildViewData() {
-  const carnivalOneRound = buildSegments(state.carnivalStart, SEQS.carnival, "carnival");
   const { viewStart, viewEnd } = getViewBounds(state.carnivalStart, state.monthOffset);
-  const carnivalSegs = buildCycledSegments(state.carnivalStart, SEQS.carnival, "carnival", viewEnd);
-  const upSegs = buildCycledSegments(state.upStart, SEQS.up, "up", viewEnd);
+  const carnivalSegs = buildCycledSegments(
+    state.carnivalStart,
+    SEQS.carnival,
+    "carnival",
+    viewEnd,
+    state.carnivalSeqIndex,
+  );
+  const upSegs = buildCycledSegments(state.upStart, SEQS.up, "up", viewEnd, state.upSeqIndex);
 
   const visibleSegs = [...carnivalSegs, ...upSegs].filter((seg) => seg.start <= viewEnd && seg.end >= viewStart);
   const dailyMap = expandDailyMap(visibleSegs);

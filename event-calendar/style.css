@@ -80,9 +80,14 @@ a {
 
 .controls {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
-  align-items: end;
+  align-items: stretch;
+}
+
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px 12px;
 }
 
 .control-group {
@@ -103,6 +108,54 @@ input[type="date"] {
   font-size: 14px;
   background: #fdfdff;
   color: var(--ink);
+}
+
+select.select {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  background: #fdfdff;
+  color: var(--ink);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10' viewBox='0 0 16 10'%3E%3Cpath fill='%235d6b7a' d='M2 0l6 6 6-6 2 2-8 8-8-8z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+}
+
+.select--carnival {
+  color: var(--carnival);
+  border-color: #b6e7de;
+}
+
+.select--up {
+  color: var(--up);
+  border-color: #ffd0ba;
+}
+
+.control-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.control-actions .hint {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.btn-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.btn-row button {
+  min-width: 96px;
 }
 
 button {
@@ -332,6 +385,15 @@ button:active {
 }
 
 @media (max-width: 640px) {
+  .control-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-row {
+    width: 100%;
+    justify-content: center;
+  }
+
   .hero {
     flex-direction: column;
   }

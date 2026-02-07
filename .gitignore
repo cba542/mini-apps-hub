@@ -39,6 +39,11 @@ styles.json
 .DS_Store
 Thumbs.db
 
+# Local env / data
+.env
+.venv/
+meal-time-rooms.db
+
 # Copy files
 * copy*
 * copy.*

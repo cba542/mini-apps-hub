@@ -1,185 +1,127 @@
-# 大众点评评论生成器
+# Mini Apps Hub (Flask) / 迷你应用合集（Flask Hub）
 
-一个基于 Flask 和 AI 的餐厅评论生成工具，可以自动生成风格多样的餐厅评论。
+A Flask hub app that mounts multiple mini apps (static apps + Flask blueprint apps).
+一个用 Flask 挂载多个迷你应用的 Hub（静态页面 + Blueprint 应用）。
 
-## 功能特点
+## Apps / 子应用
 
-- 🎨 **6种评论风格**：细节路线、接地气、路线指引、简洁实用、新品打卡、总结推荐
-- 🤖 **AI 驱动**：使用智谱 AI GLM 模型生成自然真实的评论
-- 🌐 **Web 界面**：简洁易用的 Flask Web 应用
-- ⚙️ **灵活配置**：支持自定义餐厅名称和评论要求
-- 📝 **一键生成**：快速生成符合要求的餐厅评论
+- Dianping Review Generator / 大众点评评论生成器
+  Path: `/dianping-review/`
 
-## 安装
+- Event Calendar (Carnival & UP Coupons) / 嘉年华 & UP券 活动月历
+  Path: `/event-calendar/`
 
-### 1. 克隆仓库
+- Meal Time Planner / 用餐排成（含共享房间）
+  Path: `/meal-time-planner/`
 
-```bash
-git clone https://github.com/cba542/dianping_review_generator.git
-cd dianping_review_generator
-```
+- Web Game Egg / 网页小游戏原型
+  Path: `/web-game-egg/`
 
-### 2. 创建虚拟环境
+## Run Locally / 本地运行
+
+1) Create venv / 创建虚拟环境
 
 ```bash
 python -m venv .venv
-# Windows
+```
+
+2) Activate / 激活
+
+- Windows:
+
+```bash
 .venv\Scripts\activate
-# Linux/Mac
+```
+
+- macOS/Linux:
+
+```bash
 source .venv/bin/activate
 ```
 
-### 3. 安装依赖
+3) Install deps / 安装依赖
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. 配置
-
-创建 `config.json` 文件：
-
-```json
-{
-  "AI_API_KEY": "你的智谱AI API密钥",
-  "AI_BASE_URL": "https://open.bigmodel.cn/api/coding/paas/v4",
-  "AI_MODEL": "glm-4.7",
-  "DEFAULT_RESTAURANT": "Restaurant Name",
-  "DEFAULT_NOTES": "Length 120-180 words.\nTone should feel natural and real.\nMention:\n- Easy to find\n- Serving speed\n- Allow one small downside\nAvoid ad-like phrases."
-}
-```
-
-### 5. 启动应用
+4) Run / 启动
 
 ```bash
 python app.py
 ```
 
-访问 http://127.0.0.1:5000
+Open / 访问:
 
-## 使用方法
+- Hub / 首页: `http://127.0.0.1:5000/`
+- Dianping / 点评: `http://127.0.0.1:5000/dianping-review/`
+- Event Calendar / 活动月历: `http://127.0.0.1:5000/event-calendar/`
+- Meal Planner / 用餐排成: `http://127.0.0.1:5000/meal-time-planner/`
+- Web Game / 小游戏: `http://127.0.0.1:5000/web-game-egg/`
 
-1. 输入餐厅名称
-2. （可选）调整评论要求
-3. 点击"生成评论"按钮
-4. 等待 AI 生成评论
-5. 复制生成的评论到大众点评
+## Configuration / 配置
 
-## 评论风格说明
+### Dianping Review Generator / 大众点评评论生成器
 
-| 风格 | 特点 |
-|------|------|
-| 细节路线 | 详细描述位置和路线 |
-| 接地气 | 朴实自然，注重性价比 |
-| 路线指引 | 强调交通和门牌信息 |
-| 简洁实用 | 言简意赅，突出重点 |
-| 新品打卡 | 新店体验风格 |
-| 总结推荐 | 给出明确评价和推荐 |
+Recommended: use environment variables (no `config.json` required).
+推荐：使用环境变量（不需要 `config.json`）。
 
-## 部署到云端
+- `AI_API_KEY` (required / 必填)
+- `AI_BASE_URL` (optional / 可选, default: `https://open.bigmodel.cn/api/coding/paas/v4`)
+- `AI_MODEL` (optional / 可选, default: `glm-4.7`)
 
-### 使用 Render 部署（推荐）
+Optional (local only): you may create `dianping-review/config.json`, but it MUST NOT be committed.
+可选（仅本地）：你可以创建 `dianping-review/config.json`，但不要提交到 Git。
 
-1. 将代码上传到 GitHub（config.json 和 styles.json 会被自动忽略）
-2. 登录 [Render](https://dashboard.render.com)
-3. 创建新的 Web Service
-4. 连接 GitHub 仓库
-5. 配置：
-   - **Runtime**: Python 3
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `gunicorn app:app`
-6. 使用 Secret Files 添加 config.json
-7. 部署完成，获得公网 URL
+## Deploy on Render / Render 部署
 
-### 使用 Railway 部署
+- Build Command:
 
-1. 访问 [Railway](https://railway.app)
-2. 创建新项目，连接 GitHub
-3. 选择 `dianping_review_generator` 仓库
-4. 自动部署（$5/月，不休眠）
-
-### 使用自己的服务器
-
-推荐设备：
-- **树莓派 4**：月电费约 ¥1-2，性能足够
-- **旧笔记本**：月电费约 ¥5-10，零设备成本
-
-部署命令：
 ```bash
-gunicorn -w 4 -b 0.0.0.0:5000 app:app
+pip install -r requirements.txt
 ```
 
-## 文件说明
+- Start Command:
 
-```
-dianping_review_generator/
-├── app.py                 # Flask 主应用
-├── config.json           # 配置文件（不提交到 Git）
-├── styles.json          # 评论风格模板（不提交到 Git）
-├── requirements.txt     # Python 依赖
-├── templates/
-│   └── index.html      # Web 界面
-├── .gitignore          # Git 忽略文件
-└── README.md           # 说明文档
+```bash
+gunicorn -w 2 -b 0.0.0.0:$PORT app:app
 ```
 
-## 配置文件
+Set Environment Variables / 设置环境变量:
 
-### config.json
+- `AI_API_KEY`
+- `AI_BASE_URL` (optional)
+- `AI_MODEL` (optional)
 
-```json
-{
-  "AI_API_KEY": "智谱AI API密钥",
-  "AI_BASE_URL": "API基础URL",
-  "AI_MODEL": "模型名称（glm-4.7）",
-  "DEFAULT_RESTAURANT": "默认餐厅名称",
-  "DEFAULT_NOTES": "默认评论要求"
-}
+## Test API Keys (BigModel / Gemini) / 测试 API Key（智谱 / Gemini）
+
+Use the interactive tester / 使用交互式测试脚本：
+
+```bash
+python test_ai_api.py
 ```
 
-### styles.json
+- Choose provider: BigModel (default) or Gemini.
+- It reads env vars first; if missing, it will prompt for input (hidden), and prints length + masked preview for confirmation.
+- 先读环境变量；缺失时会提示输入（隐藏输入），并显示长度 + 掩码前后码便于确认。
 
-包含6种评论风格的模板，可以自由添加或修改风格。
+Environment variables / 环境变量:
 
-## 技术栈
+- BigModel: `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL`
+- Gemini: `GEMINI_API_KEY`, `GEMINI_MODEL` (default: `gemini-2.0-flash`)
 
-- **后端**: Flask 3.0.3
-- **AI 模型**: 智谱 AI GLM-4.7
-- **Web 服务器**: Gunicorn 21.2.0
-- **部署**: Render / Railway / 自建服务器
+## Notes / 说明
 
-## 注意事项
+- `event-calendar/` loads `html2canvas` via CDN for exporting images.
+- `event-calendar/` 目前通过 CDN 加载 `html2canvas` 用于导出图片。
 
-- ⚠️ **不要将 config.json 和 styles.json 上传到公开仓库**
-- ⚠️ **Render 免费版会休眠，首次访问可能有 50 秒延迟**
-- ⚠️ **API 密钥需要到[智谱AI开放平台](https://open.bigmodel.cn/)申请**
+## Security Notes / 安全注意事项
 
-## 常见问题
+- Do NOT commit API keys, `config.json`, `.env`, or any local DB files.
+- If you deploy publicly, protect endpoints to avoid draining your API quota.
+- 不要提交 API key、`config.json`、`.env`、本地数据库文件。
+- 若部署到公网，请加访问保护，避免额度被刷。
 
-### Q: 如何获取智谱 AI API 密钥？
-A: 访问 [智谱AI开放平台](https://open.bigmodel.cn/) 注册账号并申请 API 密钥。
+## License / 许可证
 
-### Q: 免费版可以一直用吗？
-A: 是的，但会有休眠延迟。如需24/7在线，建议升级到付费版或使用自己的服务器。
-
-### Q: 可以添加新的评论风格吗？
-A: 可以，在 `styles.json` 中添加新的风格对象即可。
-
-### Q: 如何修改评论长度？
-A: 在 `config.json` 的 `DEFAULT_NOTES` 中修改字数要求。
-
-## 许可证
-
-MIT License
-
-## 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
-## 联系方式
-
-如有问题，请在 GitHub 上提 Issue。
-
----
-
-**Made with ❤️ by CBA542**
+MIT

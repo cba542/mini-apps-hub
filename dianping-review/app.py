@@ -41,9 +41,9 @@ CONFIG_ERROR = ""
 try:
     CONFIG = load_config(CONFIG_PATH)
 except FileNotFoundError:
-    CONFIG_ERROR = f"Config file not found: {CONFIG_PATH}"
+    CONFIG_ERROR = ""
 except Exception as exc:  # noqa: BLE001
-    CONFIG_ERROR = f"Failed to read config file: {exc}"
+    CONFIG_ERROR = f"Failed to read config file: {exc} (will fallback to environment vars)"
 
 
 STYLE_SAMPLES: List[dict] = []
@@ -131,7 +131,7 @@ def call_chat_api(cfg: AIConfig, messages: list[dict]) -> str:
 @bp.route("", methods=["GET", "POST"])
 @bp.route("/", methods=["GET", "POST"])
 def index():
-    error = CONFIG_ERROR
+    error = ""
     result = ""
     style_name = ""
     prompt_preview = ""
@@ -140,7 +140,7 @@ def index():
     notes = DEFAULT_NOTES
     dry_run = False
 
-    if request.method == "POST" and not error:
+    if request.method == "POST":
         restaurant = request.form.get("restaurant", "").strip()
         notes = request.form.get("notes", "").strip()
         dry_run = request.form.get("dry_run") == "1"
@@ -157,7 +157,7 @@ def index():
                 result = prompt_preview
             else:
                 if not AI_API_KEY:
-                    error = "AI_API_KEY is empty in config.json."
+                    error = "AI_API_KEY is empty. Please set it via environment variable."
                 else:
                     try:
                         cfg = AIConfig(

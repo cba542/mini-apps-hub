@@ -170,6 +170,10 @@ function buildCalendarGrid(rangeStart, rangeEnd) {
 }
 
 function renderGrid(weeks, dailyMap, visibleStart, visibleEnd) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayKey = formatDate(today);
+
   elements.calendar.innerHTML = "";
   weeks.forEach((week) => {
     week.forEach((day) => {
@@ -182,6 +186,9 @@ function renderGrid(weeks, dailyMap, visibleStart, visibleEnd) {
       dateEl.textContent = `${day.getMonth() + 1}/${day.getDate()}`;
       if (!isVisible) {
         clone.classList.add("empty");
+      }
+      if (key === todayKey) {
+        clone.classList.add("day--today");
       }
       const carnival = activities.find((a) => a.type === "carnival");
       const up = activities.find((a) => a.type === "up");
@@ -216,9 +223,11 @@ function renderGrid(weeks, dailyMap, visibleStart, visibleEnd) {
         badgesEl.appendChild(badge);
       }
       if (activities.length === 0) {
-        clone.title = `${formatDate(day)}\n无活动`;
+        const lines = key === todayKey ? ["今天", "无活动"] : ["无活动"];
+        clone.title = `${formatDate(day)}\n${lines.join("\n")}`;
       } else {
-        const lines = activities.map((act) => badgeLabel(act));
+        const lines = key === todayKey ? ["今天"] : [];
+        activities.forEach((act) => lines.push(badgeLabel(act)));
         clone.title = `${formatDate(day)}\n${lines.join("\n")}`;
       }
       elements.calendar.appendChild(clone);

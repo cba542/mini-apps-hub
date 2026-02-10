@@ -4,6 +4,7 @@ const DEFAULT_CARNIVAL_START = "2026-02-07";
 const DEFAULT_UP_START = "2026-02-06";
 const DEFAULT_CARNIVAL_INDEX = 0;
 const DEFAULT_UP_INDEX = 0;
+const DEFAULT_CHECKIN_START = "2026-02-12";
 
 const SEQS = {
   carnival: [
@@ -51,6 +52,7 @@ const elements = {
   carnivalSeq: document.getElementById("carnival-seq"),
   upStart: document.getElementById("up-start"),
   upSeq: document.getElementById("up-seq"),
+  checkinStart: document.getElementById("checkin-start"),
   apply: document.getElementById("apply"),
   exportBtn: document.getElementById("export"),
   calendarPanel: document.querySelector(".calendar-panel"),
@@ -67,8 +69,13 @@ const state = {
   upStart: parseDate(DEFAULT_UP_START),
   carnivalSeqIndex: DEFAULT_CARNIVAL_INDEX,
   upSeqIndex: DEFAULT_UP_INDEX,
+  checkinStart: null,
   monthOffset: 0,
 };
+
+function dayNumberUtc(date) {
+  return Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000);
+}
 
 function typeLabel(type) {
   return type === "carnival" ? "嘉年华" : "UP券";
@@ -173,6 +180,8 @@ function renderGrid(weeks, dailyMap, visibleStart, visibleEnd) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayKey = formatDate(today);
+  const checkinStart = state.checkinStart;
+  const checkinDayNumber = checkinStart ? dayNumberUtc(checkinStart) : null;
 
   elements.calendar.innerHTML = "";
   weeks.forEach((week) => {
@@ -189,6 +198,12 @@ function renderGrid(weeks, dailyMap, visibleStart, visibleEnd) {
       }
       if (key === todayKey) {
         clone.classList.add("day--today");
+      }
+      const isCheckin =
+        checkinDayNumber !== null &&
+        ((dayNumberUtc(day) - checkinDayNumber) % 5 + 5) % 5 === 0;
+      if (isCheckin) {
+        clone.classList.add("day--checkin");
       }
       const carnival = activities.find((a) => a.type === "carnival");
       const up = activities.find((a) => a.type === "up");
@@ -223,10 +238,15 @@ function renderGrid(weeks, dailyMap, visibleStart, visibleEnd) {
         badgesEl.appendChild(badge);
       }
       if (activities.length === 0) {
-        const lines = key === todayKey ? ["今天", "无活动"] : ["无活动"];
+        const lines = [];
+        if (key === todayKey) lines.push("今天");
+        if (isCheckin) lines.push("签到招唤券");
+        lines.push("无活动");
         clone.title = `${formatDate(day)}\n${lines.join("\n")}`;
       } else {
-        const lines = key === todayKey ? ["今天"] : [];
+        const lines = [];
+        if (key === todayKey) lines.push("今天");
+        if (isCheckin) lines.push("签到招唤券");
         activities.forEach((act) => lines.push(badgeLabel(act)));
         clone.title = `${formatDate(day)}\n${lines.join("\n")}`;
       }
@@ -256,6 +276,7 @@ function hydrateInputs() {
   const savedUp = localStorage.getItem("event-cal-up-start");
   const savedCarnivalSeq = localStorage.getItem("event-cal-carnival-seq-index");
   const savedUpSeq = localStorage.getItem("event-cal-up-seq-index");
+  const savedCheckin = localStorage.getItem("event-cal-checkin-start");
   elements.carnivalStart.value = savedCarnival || DEFAULT_CARNIVAL_START;
   elements.upStart.value = savedUp || DEFAULT_UP_START;
   if (elements.carnivalSeq) {
@@ -263,6 +284,9 @@ function hydrateInputs() {
   }
   if (elements.upSeq) {
     elements.upSeq.value = savedUpSeq ?? String(DEFAULT_UP_INDEX);
+  }
+  if (elements.checkinStart) {
+    elements.checkinStart.value = savedCheckin || DEFAULT_CHECKIN_START;
   }
 }
 
@@ -275,6 +299,9 @@ function saveInputs() {
   if (elements.upSeq) {
     localStorage.setItem("event-cal-up-seq-index", elements.upSeq.value);
   }
+  if (elements.checkinStart) {
+    localStorage.setItem("event-cal-checkin-start", elements.checkinStart.value);
+  }
 }
 
 function applySchedule() {
@@ -282,8 +309,14 @@ function applySchedule() {
   const upDate = parseDate(elements.upStart.value);
   const carnivalSeqIndex = elements.carnivalSeq ? Number(elements.carnivalSeq.value) || 0 : 0;
   const upSeqIndex = elements.upSeq ? Number(elements.upSeq.value) || 0 : 0;
+  const checkinValue = elements.checkinStart ? elements.checkinStart.value.trim() : "";
+  const checkinDate = checkinValue ? parseDate(checkinValue) : null;
   if (!carnivalDate || !upDate) {
     alert("请输入有效的起始日期");
+    return;
+  }
+  if (checkinValue && !checkinDate) {
+    alert("请输入有效的签到日期");
     return;
   }
   saveInputs();
@@ -292,6 +325,7 @@ function applySchedule() {
   state.upStart = upDate;
   state.carnivalSeqIndex = carnivalSeqIndex;
   state.upSeqIndex = upSeqIndex;
+  state.checkinStart = checkinDate;
   state.monthOffset = clamp(state.monthOffset, -MAX_MONTH_OFFSET_BACK, MAX_MONTH_OFFSET_FORWARD);
   renderView();
 }

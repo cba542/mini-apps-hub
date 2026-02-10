@@ -90,6 +90,10 @@ a {
   gap: 14px 12px;
 }
 
+.control-group--wide {
+  grid-column: 1 / -1;
+}
+
 .control-group {
   display: flex;
   flex-direction: column;
@@ -326,15 +330,53 @@ button:active {
   border-radius: inherit;
   background: linear-gradient(180deg, rgba(43, 124, 255, 0.14), rgba(43, 124, 255, 0) 38%);
   pointer-events: none;
+  z-index: 0;
 }
 
 .day--today .day__date {
   color: var(--accent);
 }
 
+.day--checkin {
+  border-style: dashed;
+  border-color: rgba(244, 183, 64, 0.9);
+}
+
+.day--checkin::after {
+  content: "签";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #4a3206;
+  background: linear-gradient(180deg, #ffe09a 0%, #f6bf4b 100%);
+  box-shadow: 0 10px 18px rgba(15, 28, 46, 0.14);
+}
+
+.day--today.day--checkin {
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.55) inset,
+    0 0 0 2px rgba(43, 124, 255, 0.28),
+    0 0 0 4px rgba(246, 191, 75, 0.22),
+    0 16px 36px rgba(15, 28, 46, 0.18);
+}
+
 .day__date {
   font-weight: 700;
   color: var(--ink);
+}
+
+.day__date,
+.day__badges {
+  position: relative;
+  z-index: 1;
 }
 
 .day__badges {

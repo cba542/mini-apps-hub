@@ -462,10 +462,36 @@ button:active {
   }
 
   .calendar {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    grid-template-columns: repeat(7, minmax(72px, 1fr));
+    min-width: 520px;
   }
 
   .weekdays {
-    display: none;
+    display: grid;
+    font-size: 12px;
+  }
+
+  .calendar-panel {
+    overflow-x: auto;
+  }
+
+  .day {
+    min-height: 96px;
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .day__date {
+    font-size: 12px;
+  }
+
+  .badge {
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+
+  .badge__icon {
+    width: 16px;
+    height: 16px;
   }
 }

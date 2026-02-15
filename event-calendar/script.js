@@ -193,6 +193,7 @@ function renderGrid(weeks, dailyMap, visibleStart, visibleEnd) {
       const dateEl = clone.querySelector(".day__date");
       const badgesEl = clone.querySelector(".day__badges");
       dateEl.textContent = `${day.getMonth() + 1}/${day.getDate()}`;
+      clone.dataset.date = key;
       if (!isVisible) {
         clone.classList.add("empty");
       }

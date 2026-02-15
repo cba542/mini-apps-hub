@@ -47,3 +47,9 @@ meal-time-rooms.db
 # Copy files
 * copy*
 * copy.*
+
+# Local notes
+TODO.md
+
+# Local test artifacts
+screenshots/
